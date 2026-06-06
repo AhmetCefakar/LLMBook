@@ -212,7 +212,7 @@ olanağını sunmaktadır. İstatistikte, veri biliminde ve makine öğrenmesind
 olabilen veri tablolarıyla çok sık karşılaşılmaktadır. Bu tür veri tablolarında satırlarda varlıklar,
 sütunlarda ise onların özellikleri bulunur. Örneğin:</p>
 <table class="docutils align-default" id="id1">
-<caption><span class="caption-text">Örnek Veri Tablosu</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<caption><span class="caption-text"><strong>Örnek Veri Tablosu</strong></span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
 <colgroup>
 <col style="width: 18.2%" />
 <col style="width: 18.2%" />
@@ -282,9 +282,9 @@ sütunlarda ise onların özellikleri bulunur. Örneğin:</p>
 <p>Burada sütunlar farklı türlerdendir. İşte NumPy ile böyle bir temsil oluşturulamamaktadır. Çünkü
 NumPy’daki iki boyutlu dizilerin her elemanı aynı türden olmak zorundadır. İşte Pandas bizim yukarıdaki
 gibi veri tablolarını oluşturmamıza olanak sağlamaktadır. Pandas’taki bu biçimde veri tablosu temsilinin
-yapılmasını sağlayan sınıfa <em>DataFrame</em> denilmektedir. Pandas denilince akla <em>DataFrame</em> sınıfı gelir.
-<em>DataFrame</em> nesnelerinin sütunlarına da Pandas’ta <em>Series</em> denilmektedir. Yukarıdaki veri tablosu Pandas
-kütüphanesi ile bir <em>DataFrame</em> olarak şöyle oluşturulabilmektedir:</p>
+yapılmasını sağlayan sınıfa <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> denilmektedir. Pandas denilince akla <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> sınıfı gelir.
+<code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> nesnelerinin sütunlarına da Pandas’ta <em>Series</em> denilmektedir. Yukarıdaki veri tablosu Pandas
+kütüphanesi ile bir <code class="docutils literal notranslate"><span class="pre">DataFrame</span></code> olarak şöyle oluşturulabilmektedir:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
@@ -329,7 +329,7 @@ kullanacağız.</p>
 <section id="scikit-learn">
 <h3><span class="section-number">1.2.4. </span>scikit-learn<a class="headerlink" href="#scikit-learn" title="Link to this heading"></a></h3>
 <p>Makine öğrenmesinde en çok kullanılan kütüphanelerden biri de <em>scikit-learn</em> denilen kütüphanedir. Bu
-kütüphane makine öğrenmesinin <em>istatistiksel, olasılıksal ve matematiksel</em> yöntemlerine ilişkin işlemler
+kütüphane makine öğrenmesinin istatistiksel, olasılıksal ve matematiksel yöntemlerine ilişkin işlemler
 yapan sınıfları ve fonksiyonları barındırmaktadır. Bugün en yaygın kullanılan makine öğrenmesi teknikleri
 yapay sinir ağlarını kullanmaktadır. scikit-learn ise yapay sinir ağlarına ilişkin yöntemleri
 içermemektedir. (scikit-learn içerisinde ilkel düzeyde yapay sinir ağlarına yönelik birkaç sınıf
@@ -362,9 +362,9 @@ da girilmektedir. Örneğin:</p>
 demekle kullanılacak algoritmanın işletilmesi ve kestirim ya da sonuç için gereken bilgilerin elde edilerek
 nesnenin özniteliklerinde (attributes) saklanması kastedilmektedir. Örneğin doğrusal regresyon uygulamak
 için regresyon doğrusuna ilişkin (genel olarak <em>hyper-plane</em> denilmektedir) katsayıların elde edilmesi
-gerekir. İşte <em>LinearRegression</em> sınıfının <em>fit</em> metodu bu katsayıları elde edip nesnenin özniteliklerinde
-saklamaktadır. <em>fit</em> metoduna tipik olarak bir NumPy dizisi verilir. Ancak bu metotlar Python listeleriyle
-ve Pandas’ın <em>Series</em> nesneleriyle de çalışabilmektedir. Örneğin:</p>
+gerekir. İşte <code class="docutils literal notranslate"><span class="pre">LinearRegression</span></code> sınıfının <code class="docutils literal notranslate"><span class="pre">fit</span></code> metodu bu katsayıları elde edip nesnenin özniteliklerinde
+saklamaktadır. <code class="docutils literal notranslate"><span class="pre">fit</span></code> metoduna tipik olarak bir NumPy dizisi verilir. Ancak bu metotlar Python listeleriyle
+ve Pandas’ın <code class="docutils literal notranslate"><span class="pre">Series</span></code> nesneleriyle de çalışabilmektedir. Örneğin:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cv</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -374,16 +374,16 @@ saklanmaktadır.</p>
 <p>Artık sıra sonucu elde etmeye gelmiştir. Bunun için <em>transform</em> metotları kullanılmaktadır. <em>transform</em>
 metotları programcıdan dönüştürülecek verileri bir NumPy dizisi olarak (Python listeleri ve Pandas <em>Series</em>
 nesneleri de kullanılabilmektedir) alır ve kestirimi yaparak sonucu bize verir. Sınıfların pek çoğunda
-(ama hepsinde değil) <em>fit</em> ve <em>transform</em> işlemlerini birlikte yapan <em>fit_transform</em> metotları da
-bulunmaktadır. (Bazı sınıflarda <em>inverse_transform</em> metotları da vardır. <em>inverse_transform</em> metotları ters
+(ama hepsinde değil) <code class="docutils literal notranslate"><span class="pre">fit</span></code> ve <code class="docutils literal notranslate"><span class="pre">transform</span></code> işlemlerini birlikte yapan <code class="docutils literal notranslate"><span class="pre">fit_transform</span></code> metotları da
+bulunmaktadır. (Bazı sınıflarda <code class="docutils literal notranslate"><span class="pre">inverse_transform</span></code> metotları da vardır. <em>inverse_transform</em> metotları ters
 işlemi yapmaktadır.) Örneğin:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">transformed_dataset</span> <span class="o">=</span> <span class="n">cv</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">target_dataset</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><strong>4) Kestirim (predict)</strong></p>
 <p>scikit-learn içerisindeki sınıfların bazıları dönüştürme, bazıları ise kestirim yapmaktadır. Dönüştürme
-yapan sınıflarda dönüştürmeler genel olarak <em>transform</em> isimli metotlarla, kestirim yapan sınıflarda ise
-kestirimler <em>predict</em> isimli metotlarla yapılmaktadır. <em>predict</em> metotlarına kestirilecek veriler argüman
+yapan sınıflarda dönüştürmeler genel olarak <code class="docutils literal notranslate"><span class="pre">transform</span></code> isimli metotlarla, kestirim yapan sınıflarda ise
+kestirimler <code class="docutils literal notranslate"><span class="pre">predict</span></code> isimli metotlarla yapılmaktadır. <code class="docutils literal notranslate"><span class="pre">predict</span></code> metotlarına kestirilecek veriler argüman
 verilir, metotlar da sonucu bize verir. Örneğin:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">lr</span> <span class="o">=</span> <span class="n">LinearRegression</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 <span class="n">lr</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
@@ -397,7 +397,7 @@ verilir, metotlar da sonucu bize verir. Örneğin:</p>
 uygulanmasını da mümkün hale getirmektedir. Makine öğrenmesinde <em>boru hattı (pipeline)</em> bir işlemin
 çıktısının diğer işleme girdi yapılması, onun çıktısının da diğerine girdi yapılması ve böylece işlemlerin
 peşi sıra daha zahmetsiz bir biçimde gerçekleştirilmesi anlamına gelmektedir. Örneğin önce <em>SimpleImputer</em>
-işlemini, onun çıktısı üzerinde de <em>StandardScaler</em> işlemini yapmak isteyelim. <em>StandardScaler</em> işleminin
+işlemini, onun çıktısı üzerinde de <code class="docutils literal notranslate"><span class="pre">StandardScaler</span></code> işlemini yapmak isteyelim. <code class="docutils literal notranslate"><span class="pre">StandardScaler</span></code> işleminin
 çıktısını da SVM işlemine sokmak isteyelim. Boru hattı kullanmadan bunları aşağıdaki gibi tek tek yapmak
 zorunda kalırız:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">si</span> <span class="o">=</span> <span class="n">SimpleImputer</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
@@ -442,9 +442,9 @@ en yoğun kullanılan kütüphaneydi. Ancak son yıllarda PyTorch kütüphanesin
 kütüphanesini tercih edenlerden fazla hale gelmiştir. Bunların yanı sıra eskiden Theano isimli bir
 kütüphane de özellikle akademik çevreler tarafından kullanılıyordu. Ancak 2017 yılından beri bu
 kütüphanenin geliştirilmesi durdurulmuştur.</p>
-<p>TensorFlow ve PyTorch için <em>kütüphane</em> yerine <em>framework</em> terimi de kullanılabilmektedir. Bir yazılımsal
-araca <em>framework</em> denilebilmesi için onun <em>akışı bazen programcıdan alıp, gerektiğinde programcının
-belirlediği fonksiyonları çağırabilmesi (inversion of control)</em> gerekmektedir. Bu açıdan bakıldığında
+<p>TensorFlow ve PyTorch için “kütüphane” yerine “framework” terimi de kullanılabilmektedir. Bir yazılımsal
+araca “framework” denilebilmesi için onun “akışı bazen programcıdan alıp, gerektiğinde programcının
+belirlediği fonksiyonları çağırabilmesi (inversion of control)”” gerekmektedir. Bu açıdan bakıldığında
 TensorFlow ve PyTorch için <em>framework</em> nitelemesi de yapılabilir. Ancak biz kursumuzda bunlara framework
 yerine kütüphane demeyi tercih edeceğiz.
 /

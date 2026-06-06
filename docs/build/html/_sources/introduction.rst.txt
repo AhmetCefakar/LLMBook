@@ -138,7 +138,7 @@ olanağını sunmaktadır. İstatistikte, veri biliminde ve makine öğrenmesind
 olabilen veri tablolarıyla çok sık karşılaşılmaktadır. Bu tür veri tablolarında satırlarda varlıklar,
 sütunlarda ise onların özellikleri bulunur. Örneğin:
 
-.. list-table:: Örnek Veri Tablosu
+.. list-table:: **Örnek Veri Tablosu**
    :header-rows: 1
    :widths: 10 10 15 20
 
@@ -190,9 +190,9 @@ sütunlarda ise onların özellikleri bulunur. Örneğin:
 Burada sütunlar farklı türlerdendir. İşte NumPy ile böyle bir temsil oluşturulamamaktadır. Çünkü
 NumPy'daki iki boyutlu dizilerin her elemanı aynı türden olmak zorundadır. İşte Pandas bizim yukarıdaki
 gibi veri tablolarını oluşturmamıza olanak sağlamaktadır. Pandas'taki bu biçimde veri tablosu temsilinin
-yapılmasını sağlayan sınıfa *DataFrame* denilmektedir. Pandas denilince akla *DataFrame* sınıfı gelir.
-*DataFrame* nesnelerinin sütunlarına da Pandas'ta *Series* denilmektedir. Yukarıdaki veri tablosu Pandas
-kütüphanesi ile bir *DataFrame* olarak şöyle oluşturulabilmektedir:
+yapılmasını sağlayan sınıfa ``DataFrame`` denilmektedir. Pandas denilince akla ``DataFrame`` sınıfı gelir.
+``DataFrame`` nesnelerinin sütunlarına da Pandas'ta *Series* denilmektedir. Yukarıdaki veri tablosu Pandas
+kütüphanesi ile bir ``DataFrame`` olarak şöyle oluşturulabilmektedir:
 
 .. code-block:: python
 
@@ -230,7 +230,6 @@ Programın çıktısı şöyle olacaktır:
    9  160    54    Kadın              Pembe
 
 
-
 Matplotlib
 ----------
 
@@ -244,7 +243,7 @@ scikit-learn
 ------------
 
 Makine öğrenmesinde en çok kullanılan kütüphanelerden biri de *scikit-learn* denilen kütüphanedir. Bu
-kütüphane makine öğrenmesinin *istatistiksel, olasılıksal ve matematiksel* yöntemlerine ilişkin işlemler
+kütüphane makine öğrenmesinin istatistiksel, olasılıksal ve matematiksel yöntemlerine ilişkin işlemler
 yapan sınıfları ve fonksiyonları barındırmaktadır. Bugün en yaygın kullanılan makine öğrenmesi teknikleri
 yapay sinir ağlarını kullanmaktadır. scikit-learn ise yapay sinir ağlarına ilişkin yöntemleri
 içermemektedir. (scikit-learn içerisinde ilkel düzeyde yapay sinir ağlarına yönelik birkaç sınıf
@@ -286,9 +285,9 @@ da girilmektedir. Örneğin:
 demekle kullanılacak algoritmanın işletilmesi ve kestirim ya da sonuç için gereken bilgilerin elde edilerek
 nesnenin özniteliklerinde (attributes) saklanması kastedilmektedir. Örneğin doğrusal regresyon uygulamak
 için regresyon doğrusuna ilişkin (genel olarak *hyper-plane* denilmektedir) katsayıların elde edilmesi
-gerekir. İşte *LinearRegression* sınıfının *fit* metodu bu katsayıları elde edip nesnenin özniteliklerinde
-saklamaktadır. *fit* metoduna tipik olarak bir NumPy dizisi verilir. Ancak bu metotlar Python listeleriyle
-ve Pandas'ın *Series* nesneleriyle de çalışabilmektedir. Örneğin:
+gerekir. İşte ``LinearRegression`` sınıfının ``fit`` metodu bu katsayıları elde edip nesnenin özniteliklerinde
+saklamaktadır. ``fit`` metoduna tipik olarak bir NumPy dizisi verilir. Ancak bu metotlar Python listeleriyle
+ve Pandas'ın ``Series`` nesneleriyle de çalışabilmektedir. Örneğin:
 
 .. code-block:: python
 
@@ -302,8 +301,8 @@ saklanmaktadır.
 Artık sıra sonucu elde etmeye gelmiştir. Bunun için *transform* metotları kullanılmaktadır. *transform*
 metotları programcıdan dönüştürülecek verileri bir NumPy dizisi olarak (Python listeleri ve Pandas *Series*
 nesneleri de kullanılabilmektedir) alır ve kestirimi yaparak sonucu bize verir. Sınıfların pek çoğunda
-(ama hepsinde değil) *fit* ve *transform* işlemlerini birlikte yapan *fit_transform* metotları da
-bulunmaktadır. (Bazı sınıflarda *inverse_transform* metotları da vardır. *inverse_transform* metotları ters
+(ama hepsinde değil) ``fit`` ve ``transform`` işlemlerini birlikte yapan ``fit_transform`` metotları da
+bulunmaktadır. (Bazı sınıflarda ``inverse_transform`` metotları da vardır. *inverse_transform* metotları ters
 işlemi yapmaktadır.) Örneğin:
 
 .. code-block:: python
@@ -313,8 +312,8 @@ işlemi yapmaktadır.) Örneğin:
 **4) Kestirim (predict)**
 
 scikit-learn içerisindeki sınıfların bazıları dönüştürme, bazıları ise kestirim yapmaktadır. Dönüştürme
-yapan sınıflarda dönüştürmeler genel olarak *transform* isimli metotlarla, kestirim yapan sınıflarda ise
-kestirimler *predict* isimli metotlarla yapılmaktadır. *predict* metotlarına kestirilecek veriler argüman
+yapan sınıflarda dönüştürmeler genel olarak ``transform`` isimli metotlarla, kestirim yapan sınıflarda ise
+kestirimler ``predict`` isimli metotlarla yapılmaktadır. ``predict`` metotlarına kestirilecek veriler argüman
 verilir, metotlar da sonucu bize verir. Örneğin:
 
 .. code-block:: python
@@ -330,7 +329,7 @@ scikit-learn kütüphanesindeki fit/transform/predict kalıbı boru hattı (pipe
 uygulanmasını da mümkün hale getirmektedir. Makine öğrenmesinde *boru hattı (pipeline)* bir işlemin
 çıktısının diğer işleme girdi yapılması, onun çıktısının da diğerine girdi yapılması ve böylece işlemlerin
 peşi sıra daha zahmetsiz bir biçimde gerçekleştirilmesi anlamına gelmektedir. Örneğin önce *SimpleImputer*
-işlemini, onun çıktısı üzerinde de *StandardScaler* işlemini yapmak isteyelim. *StandardScaler* işleminin
+işlemini, onun çıktısı üzerinde de ``StandardScaler`` işlemini yapmak isteyelim. ``StandardScaler`` işleminin
 çıktısını da SVM işlemine sokmak isteyelim. Boru hattı kullanmadan bunları aşağıdaki gibi tek tek yapmak
 zorunda kalırız:
 
@@ -383,9 +382,9 @@ kütüphanesini tercih edenlerden fazla hale gelmiştir. Bunların yanı sıra e
 kütüphane de özellikle akademik çevreler tarafından kullanılıyordu. Ancak 2017 yılından beri bu
 kütüphanenin geliştirilmesi durdurulmuştur.
 
-TensorFlow ve PyTorch için *kütüphane* yerine *framework* terimi de kullanılabilmektedir. Bir yazılımsal
-araca *framework* denilebilmesi için onun *akışı bazen programcıdan alıp, gerektiğinde programcının
-belirlediği fonksiyonları çağırabilmesi (inversion of control)* gerekmektedir. Bu açıdan bakıldığında
+TensorFlow ve PyTorch için "kütüphane" yerine "framework" terimi de kullanılabilmektedir. Bir yazılımsal
+araca "framework" denilebilmesi için onun "akışı bazen programcıdan alıp, gerektiğinde programcının
+belirlediği fonksiyonları çağırabilmesi (inversion of control)"" gerekmektedir. Bu açıdan bakıldığında
 TensorFlow ve PyTorch için *framework* nitelemesi de yapılabilir. Ancak biz kursumuzda bunlara framework
 yerine kütüphane demeyi tercih edeceğiz.
 /
