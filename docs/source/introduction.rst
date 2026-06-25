@@ -341,7 +341,7 @@ biçimde de yapılabilmektedir:
  
 Aşağıdaki şekil bu boru hattının akışını göstermektedir:
  
-.. image:: _static/sklearn-pipeline.png
+.. image:: _static/introduction/sklearn-pipeline.png
    :alt: scikit-learn Pipeline akışı
    :align: center
  

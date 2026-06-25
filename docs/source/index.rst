@@ -35,6 +35,6 @@ documentation for details.
    :numbered:
 
    introduction
-
-   
-
+   charactertablesandcharacterencodings
+   classicalnaturallanguageprocessing
+   textnormalization
