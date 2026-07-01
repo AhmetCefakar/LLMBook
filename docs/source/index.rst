@@ -38,3 +38,4 @@ documentation for details.
    charactertablesandcharacterencodings
    classicalnaturallanguageprocessing
    textnormalization
+   tokenization

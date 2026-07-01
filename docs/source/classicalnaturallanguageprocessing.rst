@@ -41,7 +41,7 @@ sözcük hazinesindeki atomlara birer numara karşılık düşürülür. Bu işl
 *vektörizasyon (vectorization)*, *sayısallaştırma*, *kodlama (encoding)* ya da *eşleştirme (mapping)*
 denilmektedir. Doğal dil işlemedeki bu ön işlem adımlarını şekilsel olarak şöyle gösterebiliriz:
 
-.. image:: _static/classicalnaturallanguageprocessing/onislem_akisi.png
+.. image:: _static/classicalnaturallanguageprocessing/onislem-akisi.png
    :alt: Doğal dil işlemede ön işlem adımlarının akış şeması
    :align: center
 
