@@ -2327,7 +2327,7 @@ gibidir:
    tesekkur,teşekkür
    .....
 
-Şimdi de bu CSV dosyasını kullanarak ikinci bir ``informal_large_normalize`` fonksiyonu yazalım:
+Şimdi de bu CSV dosyasını kullanarak ikinci bir ``informal_normalize`` fonksiyonu yazalım:
 
 .. code-block:: python
 

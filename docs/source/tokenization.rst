@@ -152,7 +152,7 @@ Karakter tabanlı atomlarına ayırma yönteminde atomlar karakterlerden oluşma
 atomlarına ayırmada sözcük hazinesi o dilde kullanılan karakter sayısı ile sınırlıdır. Ancak atomlar
 karakterlerden oluştuğu için onların bağlam içerisinde değerlendirilmesi zorlaşmaktadır. Ayrıca her ne
 kadar sözcük hazinesindeki atomların sayısı az olsa da yazılardaki toplam atomların sayısı yazıların
-karakter sayısı kadar çok olacaktır. Bu da sayısallaştırılmış yazıların çok yer kaplaması ve gereken işlem
+karakter sayısı kadar çok olacaktır. Bu da sayısallaştırılmış yazıların az yer kaplaması ve gereken işlem
 yükünün artması anlamına gelmektedir.
 
 Karakter tabanlı atomlarına ayırma oldukça basit bir biçimde Python Standart Kütüphanesi kullanılarak
@@ -2253,7 +2253,7 @@ Token Sınıfının text ve idx Öznitelikleri
 ``Token`` sınıfı aslında elde edilen atoma ilişkin pek çok bilgiyi barındırmaktadır. Biz burada geldiğimiz
 nokta itibarıyla sınıfın yalnızca birkaç örnek özniteliği üzerinde duracağız.
 
-``Token`` sınıfının ``text`` örnek özniteliği atomun yazısını, ``idx`` özniteliği ise ilgili atomun
+``Token`` sınıfının ``text`` örnek özniteliği atomun yazısını, ``idx`` özniteliği ise metin ilgili atomun
 metindeki kaçıncı Unicode karakterden başladığı bilgisini vermektedir. Aşağıda Türkçe bir metnin spaCy ile
 atomlarına ayrılması ile ilgili bir örnek veriyoruz.
 
@@ -3626,4 +3626,2582 @@ boşluk karakterleri yerleştirerek string olarak vermektedir:
    için hata fırlatılmaz — bu da olası bir mantık hatasıdır (``n < 1`` yerine ``n < 2`` olması
    gerekebilir, ancak derste unigram da geçerli bir N değeri olarak ele alındığından kod orijinal haliyle
    korunmuştur).
+
+
+scikit-learn ile N-gram; Alt Sözcüksel Atomlarına Ayırma ve BPE
+==================================================================
+
+scikit-learn ile N-gram Atomlarına Ayırma
+---------------------------------------------
+
+N-gram atomlarına ayırma için scikit-learn kütüphanesi çokça tercih edilmektedir. NLTK'de de n-gram için
+bir fonksiyon bulundurulmuştur. Ancak spaCy, Stanza ve Zemberek kütüphanelerinde bu işlem manuel
+yapılabilmektedir.
+
+scikit-learn n-gram atomlarına ayırma işlemi ``sklearn.feature_extraction.text`` modülünde bulunan
+``CountVectorizer`` sınıfı ile yapılmaktadır. Sınıfın kullanımı scikit-learn kütüphanesinin diğer
+sınıflarında olduğu gibidir. Önce ``CountVectorizer`` sınıfı türünden bir nesne yaratılır. Sonra sınıfın
+``fit`` metodu çağrılır. Sınıfın ``transform`` metodu verilen yazıyı n-gram ile ayrılan atomları kullanarak
+sayısallaştırmaktadır. ``CountVectorizer`` sınıfının ``__init__`` metodunun parametrik yapısı şöyledir:
+
+.. code-block:: python
+
+   class sklearn.feature_extraction.text.CountVectorizer(*, input='content', encoding='utf-8',
+           decode_error='strict', strip_accents=None, lowercase=True, preprocessor=None,
+           tokenizer=None, stop_words=None, token_pattern='(?u)\\b\\w\\w+\\b',
+           ngram_range=(1, 1), analyzer='word', max_df=1.0, min_df=1,
+           max_features=None, vocabulary=None, binary=False, dtype=numpy.int64)
+
+Buradaki ``encoding`` parametresi yazının hangi kodlama biçimine sahip olduğunu belirtmektedir.
+``lowercase`` parametresi yazının önce küçük harfe dönüştürülüp dönüştürülmeyeceğini belirtmektedir.
+``token_pattern`` sözcük tabanlı ayrıştırmada kullanılacak regex kalıbını belirtmektedir.
+``'(?u)\\b\\w\\w+\\b'`` kalıbı atomların peşi sıra gelen en az iki alfabetik ve nümerik karakterlerden
+oluşacağını belirtmektedir. Kalıbın başındaki ``(?u)`` karakterlerin oluşturulmasında Unicode tablonun
+dikkate alınacağını belirtmektedir. Zaten default durum böyledir. ``analyzer`` parametresi n-gram öncesinde
+yazıların sözcük tabanlı mı karakter tabanlı mı ayrıştırılacağını belirtmektedir. ``token_pattern``
+parametresi ancak ``analyzer`` parametresinin ``"word"`` olduğu durumda dikkate alınmaktadır.
+``ngram_range`` parametresi iki elemanlı bir demet almaktadır. Demetin birinci elemanı başlangıç n
+değerini, ikinci elemanı bitiş n değerini belirtir (ikinci elemanın belirttiği değer işlemlere dahildir).
+Örneğin bu parametre ``(1, 3)`` girilirse hem unigram, hem bigram hem de trigram atomlar elde edilir.
+Default durumda bu parametrenin ``(1, 1)`` biçiminde olduğuna dikkat ediniz. Bu durumda yalnızca unigram
+atomlar elde edilecektir. Örneğin bu parametre ``(2, 2)`` girilirse yalnızca bigram atomlar elde edilir.
+Metodun diğer parametrelerinin ne anlama geldiğini scikit-learn dokümanlarından inceleyebilirsiniz:
+
+``https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html``
+
+Örneğin:
+
+.. code-block:: python
+
+   from sklearn.feature_extraction.text import CountVectorizer
+
+   cv = CountVectorizer(ngram_range=(2, 2))
+
+``CountVectorizer`` nesnesi oluşturulduktan sonra artık sıra ``fit`` işleminin yapılmasına gelmiştir.
+``fit`` metodunun parametrik yapısı şöyledir:
+
+.. code-block:: python
+
+   fit(raw_documents, y=None)
+
+Metodun birinci parametresine (``raw_documents``) yazılardan oluşan dolaşılabilir bir nesne (tipik olarak
+bir Python listesi ya da Pandas ``Series`` nesnesi) girilmelidir. Yani bu parametre derlem (corpus) oluşturan
+tüm yazıları tek hamlede almaktadır. İkinci parametre (``y`` parametresi) geleceğe uyum için
+bulundurulmuştur, kullanılmamaktadır. Örneğin:
+
+.. code-block:: python
+
+   text = ["bugün hava çok güzeldi",
+           "dün de hava çok güzeldi",
+           "yarın hava nasıl olacak",
+           "bilmiyorum nasıl olacak"
+          ]
+
+   cv = CountVectorizer(ngram_range=(2, 2))
+   cv.fit(text)
+
+``fit`` işleminden sonra artık nesne içerisinde ``vocabulary_`` isimli bir öznitelik oluşturulur. Bu
+öznitelik bütün atomları barındırmaktadır (örneğimizde bigram atomları içermektedir). Örneğimizdeki
+``vocabulary_`` özniteliğini yazdırdığımızda şunları göreceğiz:
+
+.. code-block:: python
+
+   {'bugün hava': 1, 'hava çok': 5, 'çok güzeldi': 8, 'dün de': 3, 'de hava': 2,
+    'yarın hava': 7, 'hava nasıl': 4, 'nasıl olacak': 6, 'bilmiyorum nasıl': 0}
+
+Görüldüğü gibi ``vocabulary_`` özniteliği bir sözlüktür. Sözlüğün anahtarları bigram atomlardan, değerleri
+de bunlara karşı getirilen indeks numaralarından oluşmaktadır. İleride de ele alacağımız gibi *sözcük
+hazinesi (vocabulary)* tek (unique) olan atomların oluşturduğu küme ya da sözlüktür. Yukarıdaki metinde
+birden fazla yerde ``çok güzeldi``, ``hava çok`` gibi bigram atomlar bulunmaktadır. Ancak bunlardan
+yalnızca bir tanesi sözcük hazinesi içerisinde yer almaktadır.
+
+``transform`` işlemi yapıldığında artık ``transform`` metoduna girilen yazı vektörel hale getirilecektir.
+Buna İngilizce *BoW (Bag of Words)* ya da Türkçe *sözcük çantası* yöntemi denilmektedir. Biz atomların
+sayısallaştırılmasını ileride ayrı bölümde ele alacağız.
+
+Aşağıda scikit-learn kütüphanesindeki ``CountVectorizer`` sınıfı kullanılarak bigram atomlarına ayırma
+işlemi yapılmıştır:
+
+.. code-block:: python
+
+   from sklearn.feature_extraction.text import CountVectorizer
+
+   text = ["bugün hava çok güzeldi",
+           "dün de hava çok güzeldi",
+           "yarın hava nasıl olacak",
+           "bilmiyorum nasıl olacak"
+          ]
+
+   cv = CountVectorizer(ngram_range=(2, 2))
+   cv.fit(text)
+
+   print(cv.vocabulary_)
+   print('-' * 50)
+
+   print(list(cv.vocabulary_))
+
+Yukarıda da belirttiğimiz gibi klasik doğal dil işleme uygulamalarında birden fazla n değeri için n-gram
+atomlarına ayırma yöntemi kullanılabilmektedir. Örneğin biz hem unigram hem de bigram biçiminde yazıları
+atomlarına ayırabiliriz. Bu durumda sözcük hazinesi hem unigram hem de bigram atomlardan oluşacaktır:
+
+.. code-block:: python
+
+   text = ["bugün hava çok güzeldi",
+           "dün de hava çok güzeldi",
+           "yarın hava nasıl olacak",
+           "bilmiyorum nasıl olacak"
+          ]
+
+   cv = CountVectorizer(ngram_range=(1, 2))
+   cv.fit(text)
+   print(cv.vocabulary_)
+
+Burada hem unigram hem de bigram atomlarına ayırma uygulanmıştır. ``vocabulary_`` sözlüğü şöyle olacaktır:
+
+.. code-block:: python
+
+   {'bugün': 2, 'hava': 9, 'çok': 17, 'güzeldi': 8, 'bugün hava': 3, 'hava çok': 11,
+    'çok güzeldi': 18, 'dün': 6, 'de': 4, 'dün de': 7, 'de hava': 5, 'yarın': 15,
+    'nasıl': 12, 'olacak': 14, 'yarın hava': 16, 'hava nasıl': 10, 'nasıl olacak': 13,
+    'bilmiyorum': 0, 'bilmiyorum nasıl': 1}
+
+Alt Sözcüksel (Subword) Atomlarına Ayırmaya Giriş
+------------------------------------------------------
+
+Biz atomlarına ayırma yöntemlerini şöyle gruplandırmıştık:
+
+1. Karakter Tabanlı (Character-Level) Yöntem
+2. Sözcük Tabanlı (Word-Level) Yöntem
+
+   - Boşluk ve noktalama işaretleri kullanılarak
+   - Kural Tabanlı yöntemler kullanılarak (regex)
+
+3. Cümle Tabanlı (Sentence-Level) Yöntem
+4. N-gram (Unigram/Bigram/Trigram, ...) Yöntemleri
+5. Alt Sözcük (Subword) Yöntemleri
+
+   - BPE (Byte Pair Encoding)
+   - WordPiece
+   - Unigram LM
+
+6. Byte Tabanlı (Byte-Level) Yöntem
+
+Şimdi de atomlarına ayırmada *alt sözcük (subword)* yöntemlerini ele alacağız. Bu biçimdeki atomlarına
+ayırmaya İngilizce *subword tokenization* denilmektedir. Biz Türkçe *alt sözcüksel atomlarına ayırma*
+diyeceğiz. Daha önceden de belirttiğimiz gibi *alt sözcüksel atomlarına ayırma* modern transformer tabanlı
+dil modellerinin uyguladığı yöntemlerdir.
+
+Alt sözcük (subword) sözcükleri oluşturan parçalara denilmektedir. Örneğin ``hastane`` sözcüğü ``hasta``
+ve ``ne`` biçiminde alt sözcüklere ayrılabilir. Alt sözcükler hece olmak zorunda değildir. Herhangi bir
+uzunlukta karakter topluluğundan oluşabilmektedir. Bir sözcük ikiden fazla alt sözcüğe de ayrılabilmektedir.
+Alt sözcüksel atomlarına ayırma özellikle Türkçe gibi sondan eklemeli diller için oldukça etkin bir yöntem
+grubu durumundadır. Alt sözcüksel atomlarına ayırmada OOV (out-of-vocabulary) oranı diğer yöntemlere göre
+daha düşük kalma eğilimindedir. Çünkü çok az kullanılan sözcükler, hatta uydurulmuş sözcükler bile alt
+sözcüklerin birleşimleriyle ifade edilebilmektedir. Bu yöntemlerde aynı zamanda toplam atom miktarı da
+(yani sözcük hazinesinin boyutu da) azalmaktadır.
+
+Alt sözcüksel atomlarına ayırmanın Türkçe gibi sondan eklemeli diller için faydaları ve önemi aşağıdaki
+tabloda özetlenmektedir:
+
+.. list-table:: Alt Sözcüksel Atomlarına Ayırmanın Türkçe İçin Avantajları
+   :header-rows: 1
+   :widths: 25 50
+
+   * - Avantaj
+     - Açıklama ve Örnek
+   * - Eklemeli yapı desteği
+     - Türkçe sözcükler ekler zincirlenerek oluşturulur. ``"evlerden"`` → ``[ev] [ler] [den]``
+       biçiminde anlamlı atomlara bölünür.
+   * - Sözlük hazinesi boyutunu azaltma
+     - Milyonlarca çekimli form yerine sınırlı sayıda alt sözcük atomuyla tüm sözcük formları
+       temsil edilebilir.
+   * - Bilinmeyen sözcük (OOV) sorununu azaltma
+     - Eğitimde görülmeyen ``"geliştirilememişlerdendir"`` gibi formlar, bilinen alt sözcüklere
+       bölünerek temsil edilebilir hale gelir.
+   * - Morfolojik bilginin korunması
+     - Kök ve eklerin ayrı atomlar olarak temsil edilmesi, modelin morfolojik kalıpları öğrenmesini
+       kolaylaştırır.
+   * - Çok dilli modellerde verimlilik
+     - Türkçe gibi morfolojik açıdan zengin diller, alt sözcük düzeyinde diğer dillerle ortak atom
+       uzayını paylaşabilir.
+   * - Veri verimliliği
+     - Seyrek sözcüklerin alt bileşenlerine ayrılması, az örnekten öğrenmeyi (few-shot) kolaylaştırır
+       ve eğitim verisinin daha etkin kullanılmasını sağlar.
+   * - Ek sınırlarını yakalama potansiyeli
+     - BPE ve Unigram gibi yöntemler, yeterli Türkçe veriyle eğitildiğinde doğal ek sınırlarını
+       öğrenme eğilimi gösterir.
+
+Aşağıdaki tabloda da alt sözcüksel atomlarına ayırma yöntemleri ile sözcük tabanlı ve karakter tabanlı
+atomlarına ayırma yöntemleri Türkçe için niceliksel ve uyumsal bakımdan karşılaştırılmıştır:
+
+.. list-table:: Farklı Atomlarına Ayırma Yöntemlerinin Türkçe İçin Karşılaştırması
+   :header-rows: 1
+   :widths: 22 22 15 15
+
+   * - Yaklaşım
+     - Vocabulary Boyutu
+     - OOV Oranı
+     - Türkçe Uyumu
+   * - Kelime tabanlı
+     - 500.000+
+     - %15-25
+     - Zayıf
+   * - Karakter tabanlı
+     - ~100
+     - %0
+     - Orta
+   * - Subword (BPE)
+     - 30.000-50.000
+     - <%1
+     - İyi
+   * - Subword (WordPiece)
+     - 30.000-50.000
+     - <%1
+     - İyi
+   * - Subword (Unigram)
+     - 8.000-32.000
+     - <%1
+     - İyi-Çok İyi
+
+.. note::
+
+   Orijinal ders notunda ``Subword (WordPiece)`` satırındaki Türkçe Uyumu değeri *İki* olarak yazılmıştı.
+   Bu, bağlamdan açıkça anlaşıldığı üzere *İyi* sözcüğünün yazım hatasıdır; yukarıda düzeltilmiştir.
+
+Alt sözcüksel atomlarına ayırma kendi aralarında birkaç yönteme ayrılmaktadır. Bunlardan en önemlileri BPE
+(Byte Pair Encoding), WordPiece ve Unigram yöntemlerdir. Modern transformer tabanlı dil modellerinin hangi
+alt sözcüksel atomlarına ayırma yöntemlerini kullandığı aşağıdaki tabloda özetlenmiştir:
+
+.. list-table:: Modern Dil Modellerinde Kullanılan Alt Sözcüksel Atomlarına Ayırma Yöntemleri
+   :header-rows: 1
+   :widths: 20 18 15 32
+
+   * - Model
+     - Alt Yöntem
+     - BPE Tabanı
+     - Açıklama
+   * - GPT-2, GPT-3, GPT-4 (OpenAI)
+     - BPE (Byte-Pair Encoding)
+     - Byte tabanlı (Byte-level BPE)
+     - En sık geçen çift birleştirilir. Ham byte'lar üzerinde çalışır, OOV sorunu olmaz.
+   * - BERT, DistilBERT (Google)
+     - WordPiece
+     - Karakter tabanlı (Char-level)
+     - BPE'ye benzer ama birleştirme kriteri olasılık maksimizasyonuna dayanır; ``##`` öneki
+       ile alt parçalar gösterilir.
+   * - RoBERTa, BART, LLaMA (Meta)
+     - BPE (Byte-Pair Encoding)
+     - Byte tabanlı (Byte-level BPE)
+     - GPT-2 ile aynı yöntem; sözcük sınırlarına duyarlı byte-level BPE uygulanır.
+   * - T5, mT5, Gemma (Google)
+     - SentencePiece (Unigram LM veya BPE)
+     - Karakter tabanlı (Char-level)
+     - Dil bağımsız; boşluk dahil tüm metni ham karakter olarak işler; özellikle çok dilli
+       modeller için.
+   * - XLNet (Google/CMU)
+     - SentencePiece (Unigram LM)
+     - Karakter tabanlı (Char-level)
+     - Unigram dil modeli tabanlı; her atom için olasılık hesaplanır, en düşük olasılıklı
+       atomlar elenir.
+   * - ALBERT (Google)
+     - SentencePiece (Unigram LM)
+     - Karakter tabanlı (Char-level)
+     - T5 ile aynı altyapı; sözcük dağarcığı paylaşımlı katmanlarla birlikte kullanılır.
+   * - Mistral, Mixtral (Mistral AI)
+     - BPE (SentencePiece üzerinde)
+     - Byte tabanlı (Byte-level BPE)
+     - LLaMA tokenizer mimarisinden türetilmiş; SentencePiece kütüphanesi ile BPE uygulanır.
+   * - Claude (Anthropic)
+     - BPE (Byte-Pair Encoding)
+     - Byte tabanlı (Byte-level BPE)
+     - GPT-2 benzeri byte-level BPE; tam detaylar kamuya açıklanmamıştır.
+
+BPE (Byte Pair Encoding)
+-----------------------------
+
+Biz kursumuzda önce karakter tabanlı ve byte tabanlı BPE (Byte Pair Encoding) yöntemlerini göreceğiz.
+Sonra WordPiece ve Unigram yöntemleri üzerinde açıklamalar yapacağız.
+
+BPE, aslen 1994 yılında Philip Gage tarafından veri sıkıştırması için önerilmiştir. Temel fikir basittir:
+Bir veri dizisinde en sık yan yana görülen iki sembolü bulup bunları yeni tek bir sembolle değiştir, bu
+işlemi yinele. Yukarıdaki tabloda da belirttiğimiz gibi modern transformer modellerinin bir kısmı atomlarına
+ayırmayı BPE yöntemini kullanarak yapmaktadır:
+
+- GPT-2, GPT-3, GPT-4 (OpenAI) → Byte düzeyinde BPE
+- RoBERTa (Meta AI) → Byte düzeyinde BPE
+- LLaMA, Mistral → SentencePiece düzeyinde BPE
+- BERTurk → WordPiece (WordPiece yönteminin ana fikri BPE ile aynıdır.)
+
+Karakter Tabanlı BPE Algoritması
+--------------------------------------
+
+Karakter tabanlı BPE algoritmasının işleyişi şöyledir:
+
+**1. Adım:** Derlem sözcük tabanlı atomlarına ayrılır. Bu işlemde noktalama işaretleri atılabilir ya da
+genellikle yapıldığı gibi tutulur. Noktalama işaretleri atılmayacaksa bunlar sanki ayrı sözcükmüş gibi
+ele alınır. Örneğin derlemden elde edilen sözcükler şunlar olsun:
+
+.. code-block:: text
+
+   al  alma  almak  alır  alınan  al  alma  almalı  almadan  alındı  al
+   ver  vermek  verir  verilen  ver  ver  vermeli  vermeden  verildi
+   git  gitmek  gider  gidilen  git  git  gitmeli  gitmeden  gidildi
+
+**2. Adım:** Derlemdeki birden fazla aynı sözcüğün tekrar tekrar işleme sokulmaması için işin başında
+sözcük temelinde bir frekans sözlüğü oluşturulabilir. Örneğin sözcüklerden oluşan frekans sözlüğü şöyle
+elde edilebilir:
+
+.. code-block:: python
+
+   {
+       'al'       : 3,
+       'alma'     : 2,
+       'almak'    : 1,
+       'alır'     : 1,
+       'alınan'   : 1,
+       'almalı'   : 1,
+       'almadan'  : 1,
+       'alındı'   : 1,
+       'ver'      : 3,
+       'vermek'   : 1,
+       'verir'    : 1,
+       'verilen'  : 1,
+       'vermeli'  : 1,
+       'vermeden' : 1,
+       'verildi'  : 1,
+       'git'      : 3,
+       'gitmek'   : 1,
+       'gider'    : 1,
+       'gidilen'  : 1,
+       'gitmeli'  : 1,
+       'gitmeden' : 1,
+       'gidildi'  : 1
+   }
+
+**3. Adım:** Derlemdeki tüm tek (unique) sözcükler başlangıçta en yalın alt sözcük olan karakterlerine
+ayrıştırılır. Sözcüklerin bittiğinin anlaşılması önemlidir. Bu nedenle sözcüklerin sonuna sözcük sonunu
+belirten ayrı bir yazı da yerleştirilir. Bu sözcük sonu yazısının birden fazla karakterden oluşmasının
+önemi yoktur. Bu ayrıştırma işleminde de sözlük kullanılabilir. Örneğin:
+
+.. code-block:: python
+
+   {
+       'al'       : ['a', 'l', '</w>'],
+       'alma'     : ['a', 'l', 'm', 'a', '</w>'],
+       'almak'    : ['a', 'l', 'm', 'a', 'k', '</w>'],
+       'alır'     : ['a', 'l', 'ı', 'r', '</w>'],
+       'alınan'   : ['a', 'l', 'ı', 'n', 'a', 'n', '</w>'],
+       'almalı'   : ['a', 'l', 'm', 'a', 'l', 'ı', '</w>'],
+       'almadan'  : ['a', 'l', 'm', 'a', 'd', 'a', 'n', '</w>'],
+       'alındı'   : ['a', 'l', 'ı', 'n', 'd', 'ı', '</w>'],
+       'ver'      : ['v', 'e', 'r', '</w>'],
+       'vermek'   : ['v', 'e', 'r', 'm', 'e', 'k', '</w>'],
+       'verir'    : ['v', 'e', 'r', 'i', 'r', '</w>'],
+       'verilen'  : ['v', 'e', 'r', 'i', 'l', 'e', 'n', '</w>'],
+       'vermeli'  : ['v', 'e', 'r', 'm', 'e', 'l', 'i', '</w>'],
+       'vermeden' : ['v', 'e', 'r', 'm', 'e', 'd', 'e', 'n', '</w>'],
+       'verildi'  : ['v', 'e', 'r', 'i', 'l', 'd', 'i', '</w>'],
+       'git'      : ['g', 'i', 't', '</w>'],
+       'gitmek'   : ['g', 'i', 't', 'm', 'e', 'k', '</w>'],
+       'gider'    : ['g', 'i', 'd', 'e', 'r', '</w>'],
+       'gidilen'  : ['g', 'i', 'd', 'i', 'l', 'e', 'n', '</w>'],
+       'gitmeli'  : ['g', 'i', 't', 'm', 'e', 'l', 'i', '</w>'],
+       'gitmeden' : ['g', 'i', 't', 'm', 'e', 'd', 'e', 'n', '</w>'],
+       'gidildi'  : ['g', 'i', 'd', 'i', 'l', 'd', 'i', '</w>']
+   }
+
+**4. Adım:** Tüm derlemdeki sözcüklerin oluşturduğu yan yana gelen alt sözcüklerin yinelenme sayıları
+hesaplanır. En fazla yinelenen yan yana iki alt sözcük birleştirilir. İşin başında sözcükler karakterlerden
+alt sözcük yapıldığı için yan yana karakterlerin frekansları hesaplanmaktadır. Yukarıdaki örnekte yan yana
+en fazla gelen iki harf (yani alt sözcük) ``('a', 'l')`` harfleridir. Bunların toplam sayısı 12'dir:
+
+.. code-block:: text
+
+   ('a', 'l')  → al(1×3) + alma(1×2) + almak(1×1) + alır(1×1) + alınan(1×1)
+                  + almalı(2×1) + almadan(1×1) + alındı(1×1) = 12
+
+O halde ``'a'`` ve peşi sıra gelen ``'l'`` birleştirilir, tek bir alt sözcük haline getirilir. Bu durumda
+sözlük şu hale dönüşecektir:
+
+.. code-block:: python
+
+   {
+       'al'       : ['al', '</w>'],
+       'alma'     : ['al', 'm', 'a', '</w>'],
+       'almak'    : ['al', 'm', 'a', 'k', '</w>'],
+       'alır'     : ['al', 'ı', 'r', '</w>'],
+       'alınan'   : ['al', 'ı', 'n', 'a', 'n', '</w>'],
+       'almalı'   : ['al', 'm', 'a', 'l', 'ı', '</w>'],
+       'almadan'  : ['al', 'm', 'a', 'd', 'a', 'n', '</w>'],
+       'alındı'   : ['al', 'ı', 'n', 'd', 'ı', '</w>'],
+       'ver'      : ['v', 'e', 'r', '</w>'],
+       'vermek'   : ['v', 'e', 'r', 'm', 'e', 'k', '</w>'],
+       'verir'    : ['v', 'e', 'r', 'i', 'r', '</w>'],
+       'verilen'  : ['v', 'e', 'r', 'i', 'l', 'e', 'n', '</w>'],
+       'vermeli'  : ['v', 'e', 'r', 'm', 'e', 'l', 'i', '</w>'],
+       'vermeden' : ['v', 'e', 'r', 'm', 'e', 'd', 'e', 'n', '</w>'],
+       'verildi'  : ['v', 'e', 'r', 'i', 'l', 'd', 'i', '</w>'],
+       'git'      : ['g', 'i', 't', '</w>'],
+       'gitmek'   : ['g', 'i', 't', 'm', 'e', 'k', '</w>'],
+       'gider'    : ['g', 'i', 'd', 'e', 'r', '</w>'],
+       'gidilen'  : ['g', 'i', 'd', 'i', 'l', 'e', 'n', '</w>'],
+       'gitmeli'  : ['g', 'i', 't', 'm', 'e', 'l', 'i', '</w>'],
+       'gitmeden' : ['g', 'i', 't', 'm', 'e', 'd', 'e', 'n', '</w>'],
+       'gidildi'  : ['g', 'i', 'd', 'i', 'l', 'd', 'i', '</w>']
+   }
+
+BPE algoritmasında her sözcük kendi içinde alt sözcüklere ayrılır. Yan yana iki sözcük arasında
+birleştirme hiçbir zaman yapılmamaktadır.
+
+**5. Adım:** Bir döngü içerisinde üst üste 4'üncü adım uygulanır. Burada kritik bir nokta bu döngünün
+hangi koşul altında sonlandırılacağıdır. Tipik olarak algoritmada döngü iki biçimde sonlandırılmaktadır:
+
+- Algoritmaya sözcük hazinesinin maksimum büyüklüğünü belirten bir ``vocab_size`` parametresi
+  hiperparametre olarak verilebilir. Başlangıçta sözcük hazinesi karakterlerden oluşmaktadır. Sonra
+  sözcük hazinesi birleştirmelerle yavaş yavaş büyür. İşte sözcük hazinesi önceden belirlenen bir üst
+  değere geldiğinde döngü sonlandırılabilir.
+- Artık yan yana atomlar birleştirilemez hale gelir. Yani yan yana gelen atomların frekanslarının hepsi
+  1 olur. (Tabii burada sözcüklerden gelen frekansları kastetmiyoruz.) Bu durumda döngüden çıkılabilir.
+
+**6. Adım:** Algoritmadan ürün olarak ne elde edilmektedir? Temelde iki ürün önemlidir:
+
+- Yan yana hangi atomların birleştirildiğine ilişkin bir atom birleştirme listesi
+- Sözcük hazinesi (vocabulary)
+
+Elde edilen bu ürün sayesinde yeni bir metin elde edilen alt sözcükler kullanılarak atomlarına ayrılıp
+sayısal hale getirilebilmektedir.
+
+**7. Adım:** Bizim atomlarına ayrıştırmaya ek olarak yardımcı fonksiyonlar yoluyla yeni bir metni elde
+edilen alt sözcüklerle atomlarına ayırabilmemiz ve atomlarına ayrılmış bir metni de yeniden
+birleştirebilmemiz gerekir.
+
+
+BPE İçin Sözcük Tabanlı Atomlarına Ayırma ve BPETokenizer Sınıfı
+=====================================================================
+
+BPE Öncesi Normalizasyon ve Sözcük Tabanlı Ayırma Kuralları
+----------------------------------------------------------------
+
+Karakter tabanlı BPE algoritmasını uygulamadan önce bizim metin üzerinde normalizasyon işlemlerini
+yapmamız gerekir. Sözcük tabanlı atomlarına ayırma işleminde nelerin korunup nelerin ayrılması
+gerektiğini aşağıdaki tabloda veriyoruz:
+
+.. list-table:: BPE İçin Sözcük Tabanlı Atomlarına Ayırma Kuralları
+   :header-rows: 1
+   :widths: 20 15 18 10 32
+
+   * - Kategori
+     - Örnek
+     - Ayrılmış Hâl
+     - İşlem
+     - Neden?
+   * - Cümle sonu noktalama
+     - ``gittim.``
+     - ``gittim  .``
+     - Ayır
+     - Yapışık nokta ayrı corpus girişi yaratır.
+   * - Virgül, noktalı virgül
+     - ``aldım,  geldim;``
+     - ``aldım  ,  geldim  ;``
+     - Ayır
+     - Liste ayracı sözcük morfolojisinden bağımsızdır.
+   * - Soru ve ünlem işareti
+     - ``geldi mi?  Dur!``
+     - ``geldi mi ?  Dur !``
+     - Ayır
+     - Farklı bağlamlarda sözcük frekansları çarpıtılır.
+   * - Parantez ve tırnak
+     - ``(güzel)  "ev"``
+     - ``( güzel )  " ev "``
+     - Ayır
+     - Kapama karakteri sahte sözcük tipi üretir.
+   * - Kısaltma noktası
+     - ``Doç. Dr. Prof.``
+     - ``Doç. Dr. Prof.``
+     - Koru
+     - Nokta kısaltmanın parçasıdır; regex ile koruma listesine alınmalı.
+   * - Ondalık sayı
+     - ``3.14  /  2,5``
+     - ``3.14  /  2,5``
+     - Koru
+     - Nokta/virgül rakamlar arası ondalık ayraçtır.
+   * - Binlik ayracı
+     - ``1.000  /  12.500``
+     - ``1.000  /  12.500``
+     - Koru
+     - Sayı içindeki nokta bölünürse anlam bozulur.
+   * - Yüzde ve para birimi
+     - ``%45  $10  €9``
+     - ``%45  $10  €9``
+     - Koru
+     - Sembol+rakam birlikte anlam birimi oluşturur.
+   * - Kesme işareti (Türkçe)
+     - ``Türkiye'de``
+     - ``Türkiye'de``
+     - Koru
+     - Özel isim+ek ayrımıdır; BPE sınırı öğrenmeli.
+   * - URL ve e-posta
+     - ``ornek.com  a@b.com``
+     - ``ornek.com  a@b.com``
+     - Koru
+     - İçindeki nokta ve @ sözcük sınırı değildir.
+   * - Tire (kısa/uzun)
+     - ``siyah-beyaz``
+     - ``siyah - beyaz``
+     - Ayır
+     - Bileşik sözcük parçaları ayrı frekans taşımalı.
+   * - Büyük/küçük harf
+     - ``Ev  ev  EV``
+     - ``ev  ev  ev``
+     - Normalize
+     - Türkçe I/İ dönüşümüne Python ``lower()`` yetmez.
+
+Biz daha önce regex kullanarak sözcük tabanlı atomlarına ayırma işlemlerinde zaten tablodaki önerilenlerin
+çoğunu uygulamıştık. Uygulamadıklarımız şunlardı:
+
+- Kısaltma noktasının korunması. (Örneğin biz ``"Prof."`` gibi bir kısaltmada bunu tek bir atom değil
+  ``"Prof"`` ve ``"."`` biçiminde iki atoma ayırdık.)
+- Ondalık sayılardaki noktaların ve virgüllerin korunması. (Biz ``12.34`` gibi bir yazıyı üç atoma
+  ayırdık.)
+- Biz ``"siyah-beyaz"`` yazısını tek bir atom olarak ele aldık, onu üç parçaya bölmedik.
+
+Eğer BPE için yukarıdaki tabloda belirtilen tüm koşulları belli bir kalitede karşılamak istersek o zaman
+daha önce yazmış olduğumuz regex tabanlı sözcük tabanlı atomlarına ayırma örneğini aşağıdaki gibi
+değiştirmemiz gerekir:
+
+.. code-block:: python
+
+   # bpe_word_tokenizer.py
+
+   import re
+
+   def bpe_word_tokenize(text):
+       special_patterns = [
+           (r'\d{1,2}[./-]\d{1,2}[./-]\d{2,4}',                          'DATE'),
+           (r'\d{1,3}(?:\.\d{3})+(?:,\d+)?',                             'REAL_NUMBER'),
+           (r'\d+[.,]\d+',                                               'REAL_NUMBER'),
+           (r'\d{1,2}:\d{2}(?::\d{2})?',                                 'TIME'),
+           (r'\d+(?:[.,]\d+)?\s*(?:TL|USD|EUR|₺|\$|€)',                  'CURRENCY'),
+           (r'(?:TL|USD|EUR|₺|\$|€)\s*\d+(?:[.,]\d+)?',                  'CURRENCY'),
+           (r'%\d+(?:[.,]\d+)?',                                         'PERCENT'),
+           (r'(?:0|\(\d{3}\)|\+\d{2})\s*\d{3}[\s-]?\d{3}[\s-]?\d{2,4}',  'TEL'),
+           (r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}',           'EMAIL'),
+           (r'https?://[^\s<>"]+',                                       'URL'),
+           (r'www\.[^\s<>"]+',                                           'URL'),
+           (r'\d+/\d+',                                                  'RATIONAL'),
+           (r'\d+(?:[.,]\d+)?\s*(?:kg|g|mg|km|m|cm|mm|lt|ml|m²|m³)',     'MEASURE'),
+           (r'\d+',                                                      'INTEGER'),
+       ]
+
+       turkish_suffix = r"(?:'[a-zA-ZçÇğĞıİöÖşŞüÜ]+)?"
+       labels = [label for _, label in special_patterns] + ['ABBR', 'WORD', 'PUNCTUATOR']
+
+       combined = '|'.join(f'({p}{turkish_suffix})' for p, _ in special_patterns)
+
+       abbr_pat  = r'([A-ZÇĞİÖŞÜ][a-zA-ZçÇğĞıİöÖşŞüÜ]+\.)'
+
+       # turkish_suffix geri eklendi, apostrop ile gelen ekler sözcükle birlikte kalıyor
+       word_pat  = r'([a-zA-ZçÇğĞıİöÖşŞüÜ]+' + turkish_suffix + r')'
+
+       # Tek tırnak/apostrop ÇIKARILDI
+       punct_pat = r'([.,!?;:()\"\-])'
+
+       final_pattern = f'{combined}|{abbr_pat}|{word_pat}|{punct_pat}'
+
+       tokens = []
+       for m in re.finditer(final_pattern, text):
+           token = m.group()
+           if token.strip():
+               tokens.append((token, labels[m.lastindex - 1]))
+       return tokens
+
+   # Test
+
+   text = """Prof. Dr. Ali Serçe'yi bugün 06ankara plaka gördüm. Türkiye'nin başkenti Ankara'dır. 3.14 nedir?
+           aslank@csystem.org siyah-beyaz %50'si senin. $10
+           """
+   tokens = bpe_word_tokenize(text)
+   for token, label in tokens:
+       print(f'{token!r:30} → {label}')
+
+.. note::
+
+   Orijinal ders notunda bu ``bpe_word_tokenize`` fonksiyonu ve test bloğu birebir aynı içerikle iki kez
+   yer almaktaydı (ikincisi hafif farklı bir girintilemeyle). İçerik tamamen özdeş olduğundan burada
+   yalnızca bir kez verilmiştir.
+
+Tabii aslında spaCy ve Zemberek kütüphaneleri zaten tam olarak yukarıdaki tabloda belirtilen kurallara
+uygun bir biçimde atomlarına ayırma işlemini yapmaktadır. Yani bu aşamada biz doğrudan bu kütüphaneleri
+kullanabiliriz.
+
+spaCy ile Sözcük Tabanlı Atomlarına Ayırma
+----------------------------------------------
+
+Şimdi artık karakter tabanlı BPE algoritmasının gerçekleştirimini yapabiliriz. Gerçekleştirim için önce
+metni daha önce oluşturduğumuz ``build_spacy_turkish_normalizer`` boru hattı nesnesi ile normalize edip
+sonra spaCy kütüphanesi ile sözcük tabanlı atomlarına ayıracağız. Örneğin:
+
+.. code-block:: python
+
+   import normalizer
+   import spacy
+
+   def spacy_word_tokenizer(corpus):
+       tn = normalizer.build_spacy_turkish_normalizer()
+       normalized_corpus = [tn(text) for text in corpus]
+       print(normalized_corpus)
+
+       nlp = spacy.load('tr_core_news_md')
+       for text in normalized_corpus:
+           doc = nlp(text)
+           for token in doc:
+               yield token
+
+   # Test
+
+   corpus = [
+       "Bugün hava çok güzel. Parka gidelim mi?",
+       "Bugün lastiğin havası sönmüş, ben onu parkta şişirdim.",
+       "Alsancak'ta al bir bayrak gördüm. Prof. Dr. Ali Serçe de gelecek.",
+       ]
+
+   all_tokens = spacy_word_tokenizer(corpus)
+   print(all_tokens)
+
+``spacy_word_tokenizer`` fonksiyonunun üretici bir fonksiyon biçiminde yazıldığına dikkat ediniz. Bu
+sayede atomlar baştan bir listede toplanmak yerine *talep edildiğinde* verilecektir.
+
+BPETokenizer Sınıfının Tasarımı
+------------------------------------
+
+Karakter tabanlı BPE atomlarına ayırmasını ``BPETokenizer`` isimli bir sınıfa yaptırabiliriz:
+
+.. code-block:: python
+
+   class BPETokenizer:
+       pass
+
+Sınıfın ``__init__`` metodunda nesne üzerinde daha sonra kullanacağımız öznitelikleri yaratabiliriz:
+
+.. code-block:: python
+
+   def __init__(self, vocab_size, end_of_word_symbol='</w>'):
+       self.vocab_size = vocab_size
+       self.end_of_word_symbol = end_of_word_symbol
+       self.word_freqs = defaultdict(int)
+       self.vocab = defaultdict(int)
+       self.splits = {}
+       self.merge_rules = []
+
+.. note::
+
+   ``defaultdict`` için gerekli olan ``from collections import defaultdict`` import ifadesi orijinal ders
+   notunda bu metot içinde gösterilmemiştir. Tam kodda bu importun modülün üst kısmında bulunması
+   gerektiği varsayılmaktadır.
+
+Metodun ``vocab_size`` parametresi algoritmanın hangi sözcük hazinesi büyüklüğüne geldiğinde
+sonlandırılacağını belirtmektedir. Bu değer her birleştirmede artırılmaktadır. ``end_of_word_symbol``
+parametresi ise sözcük sonlarının hangi atomla ifade edileceğini belirtmektedir. Bu parametrenin default
+değer aldığına dikkat ediniz. ``__init__`` metodunda parametre değerleri nesnenin aynı isimli
+özniteliklerinde saklanmıştır. Nesnenin diğer özniteliklerini tek tek açıklayalım:
+
+``self.word_freqs``: Bu öznitelik başlangıçta bir kez oluşturulur, sonra bir daha değiştirilmez.
+Başlangıçtaki sözcük tabanlı atomların derlem içerisinde kaç kez yinelendiğini tutmaktadır. Örneğin
+``"kitap"`` atomu tüm derlem içerisinde 150 kez yinelenmiş olsun. Bu durumda anahtar ``"kitap"``, onun
+değeri ise 150 olacaktır. Yani bu sözlük ``atom: frekans`` biçiminde elemanlardan oluşmaktadır.
+
+``self.vocab``: Bu öznitelik atomlara ayırma işlemi sonucunda atomların oluşturduğu sözcük hazinesini
+belirtmektedir. ``vocab`` özniteliği bir sözlüktür. Bu sözlüğün anahtarları alt sözcüklerden oluşan
+atomlardan, değerleri ise bunların derlem içerisindeki yinelenme sayısından (yani frekanslarından)
+oluşmaktadır.
+
+``self.splits``: Bu sözlük derlemdeki her sözcük atomunun alt sözcük atomlarını tutmaktadır. Bu
+sözlüğün anahtarları derlemdeki sözcük atomlarından, değerleri ise onların parçalarını belirten
+listelerden oluşmaktadır. Örneğin bu sözlüğün bir elemanı
+``'muhasebecide': ['muhasebe', 'ci', 'de']`` biçiminde olabilir. Birleştirme buradaki listeler
+üzerinde yapılmaktadır.
+
+``self.merge_rules``: Bu öznitelik tüm birleştirme kurallarından oluşmaktadır. Bu listenin elemanları
+iki elemanlı demetlerden oluşmaktadır. Her demet yan yana hangi atomların birleştirildiğini
+belirtmektedir. Örneğin ``'a'`` atomu ile ``'l'`` atomu birleştiriliyorsa bu liste içerisinde
+``('a', 'l')`` biçiminde bir eleman vardır. Bu liste algoritmanın çalışması bittikten sonra metinlerin
+alt sözcüklerden oluşan atomlarına ayrılması ve alt sözcüklerden oluşan atomlardan metnin elde edilmesi
+işlemlerinde kullanılmaktadır.
+
+BPE İşleminin train Metoduyla Yapılması
+--------------------------------------------
+
+BPE işlemi ``BPETokenizer`` sınıfının ``train`` metodunun çağrılmasıyla gerçekleştirilmektedir.
+``train`` metodunun parametrik yapısı şöyledir:
+
+.. code-block:: python
+
+   def train(self, tokens):
+       pass
+
+Metot derlemdeki tüm atomları parametre olarak almaktadır. Derlemin string'lerden oluşan dolaşılabilir
+bir nesne (tipik olarak bir liste) olması gerekmektedir. Yani biz sınıfı nihayetinde şöyle kullanırız:
+
+.. code-block:: python
+
+   all_tokens = (token.text for token in spacy_word_tokenizer(corpus))
+
+   bpe_tokenizer = BPETokenizer(300)
+   bpe_tokenizer.train(all_tokens)
+
+``spacy_word_tokenizer`` fonksiyonunun atomları dolaşıldıkça ``Token`` türünden nesneleri veren
+dolaşılabilir bir nesne ile geri döndüğüne dikkat ediniz. Biz atom yazılarını ``Token`` nesnelerinin
+``text`` özniteliği ile elde ediyorduk. Tüm atom yazılarının bir listeye doldurulması yerine talep
+edildiğinde elde edilmesi daha iyi bir tekniktir. Bu nedenle yukarıda liste içlemi yerine *üretici
+ifade (generator expression)* kullanılmıştır.
+
+Şimdi ``train`` metodunun gerçekleştirimini yapalım. Metot sınıftaki diğer metotları çağırarak
+işlemlerini yapmaktadır. Metotta ilk yapılan işlem nesnenin ``word_freqs`` özniteliğini oluşturmaktır.
+Yani hangi atomdan kaç tane olduğunun tespit edilmesidir. Bu işlemi ``_build_word_freqs`` metodu
+yapmaktadır. (Python'da isimleri alt çizgi ile başlatılan fonksiyon ve metotların mantıksal bakımdan
+*private* etkisi oluşturduğunu anımsayınız.) Metot şöyle yazılmıştır:
+
+.. code-block:: python
+
+   def _build_word_freqs(self, tokens):
+       for word in tokens:
+           self.word_freqs[word] += 1
+
+Görüldüğü gibi bu metot tüm atomların kaçar tane olduğunu nesnenin ``word_freqs`` özniteliğinde
+saklamaktadır. ``train`` metodumuz şu hale gelmiştir:
+
+.. code-block:: python
+
+   def train(self, tokens):
+       self._build_word_freqs(tokens)
+       # ...
+
+
+BPETokenizer Sınıfının Gerçekleştirimi — Devam
+==================================================
+
+self.splits Sözlüğünün Başlangıç Değerinin Oluşturulması
+-----------------------------------------------------------
+
+Başlangıçtaki sözcük (burada atom da diyebiliriz) frekanslarını hesapladıktan sonra başlangıçtaki
+``self.splits`` sözlüğünü oluşturabiliriz. ``self.splits`` yukarıda da belirttiğimiz gibi sözcüklerin
+anahtar olduğu, alt sözcük listelerinin de değerleri oluşturduğu bir sözlüktür. BPE algoritması
+aşağıdan yukarıya (bottom-up) işletilmektedir. Önce sözcükler en yalın parça olan karakterlere
+ayrıştırılır, sonra yan yana alt sözcükler birleştirilir. ``self.splits`` sözlüğü işin başında
+aşağıdakine benzer bir görünümdedir:
+
+.. code-block:: python
+
+   {
+       'bugün': ['b', 'u', 'g', 'ü', 'n</w>'],
+       'hava': ['h', 'a', 'v', 'a</w>'],
+       'çok': ['ç', 'o', 'k</w>'],
+       'güzel': ['g', 'ü', 'z', 'e', 'l</w>'],
+       ...
+   }
+
+Burada sözcüklerin son karakterleri ile sözcük sonu atomunun işin başında birleştirildiğine dikkat
+ediniz. Bunları ayrı tutmakla işin başında birleştirmek benzer etkilere yol açmaktadır. Ancak bunların
+işin başında birleştirilmesi toplamda fayda sağlamaktadır. Aslında derlem büyüdükçe zaten bu
+birleştirme algoritma tarafından yapılacaktır. Bunun baştan yapılması daha uygun olabilmektedir. Ayrıca
+bu birleştirme sayesinde sözcük sonu karakteri sözcüğün sonuyla hemen ilişkilendirilmiş olur.
+``BPETokenizer`` sınıfında bu işlemi ``_init_splits`` metoduna yaptırabiliriz:
+
+.. code-block:: python
+
+   class BPETokenizer:
+       #...
+       def _word_to_split(self, word):
+           chars = list(word)
+           chars[-1] += self.end_of_word_symbol
+           return chars
+
+       def _init_splits(self):
+           self.splits = {}
+           for word in self.word_freqs:
+               self.splits[word] = self._word_to_split(word)
+
+.. note::
+
+   Orijinal ders notunda ``_init_splits`` metodunun içinde ``self._word_to_splits(word)`` çağrısı
+   yapılmaktadır (çoğul ``splits``). Ancak tanımlanan metodun adı ``_word_to_split``'tir (tekil). Bu
+   tutarsızlık çalışma zamanında ``AttributeError`` ile sonuçlanır. Yukarıda kodda doğru olan tekil ad
+   (``_word_to_split``) kullanılmıştır.
+
+``train`` metodumuz da şu hale gelmiştir:
+
+.. code-block:: python
+
+   def train(self, tokens):
+       self._build_word_freqs(tokens)
+       self._init_splits()
+       #...
+
+Başlangıç Sözcük Hazinesinin Oluşturulması
+----------------------------------------------
+
+Şimdi de ``train`` metodunda başlangıçtaki sözcük hazinesini ve bu sözcük hazinesinin uzunluğunu elde
+edelim. Başlangıçtaki sözcük hazinesi ``self.splits`` sözlüğünün değerleri olan listenin elemanlarından
+oluşturulacaktır. Tabii sözcük hazinesi derlemdeki benzersiz atomların topluluğu kümesi anlamına
+geldiğine göre bizim de bunu Python'un kümeleriyle oluşturmamız uygun olur:
+
+.. code-block:: python
+
+   def train(self, tokens):
+       self._build_word_freqs(tokens)
+       self._init_splits()
+
+       initial_vocab = set()
+       for word in self.splits:
+           initial_vocab.update(word)
+       current_vocab_size = len(initial_vocab)
+
+Artık ``initial_vocab`` içerisinde başlangıçtaki sözcük hazinesi, ``current_vocab_size`` içerisinde de
+sözcük hazinesinin uzunluğu yer almaktadır. ``current_vocab_size`` döngüden çıkmakta kullanılacaktır.
+
+BPE Döngüsü
+--------------
+
+Şimdi artık bir döngü içerisinde BPE algoritmasını işletebiliriz. Döngümüz şöyle olabilir:
+
+.. code-block:: python
+
+   while current_vocab_size < self.vocab_size:
+       #...
+
+Başlangıçta ``current_vocab_size`` benzersiz harflerden oluşmaktadır, yani küçüktür. Ancak algoritma
+işletildikçe, yani yan yana sözcük parçaları birleştirildikçe sözcük hazinesinin uzunluğu artacaktır.
+
+Yan Yana Çift Frekanslarının Hesaplanması
+---------------------------------------------
+
+Döngüde ilk yapılacak şey yan yana çiftlerin derlem içerisindeki frekanslarını hesaplamaktır. Sonra
+frekansı en büyük olan yan yana çift elde edilip birleştirme yapılabilir. Yan yana çiftlerin frekans
+hesabını aşağıdaki gibi bir metotla yapabiliriz:
+
+.. code-block:: python
+
+   def _get_pair_freqs(self):
+       freqs_dict = defaultdict(int)
+       for word, subwords in self.splits.items():
+           if len(subwords) < 2:
+               continue
+           for i in range(len(subwords) - 1):
+               pair = subwords[i], subwords[i + 1]
+               freqs_dict[pair] += self.word_freqs[word]
+       return freqs_dict
+
+Burada ``self.splits`` sözlüğündeki listeler tek tek dolaşılarak onların yan yana elemanlarının
+frekansları elde edilmiştir. Fonksiyon anahtarları birleştirilecek yan yana alt sözcükleri belirten
+demetlerden, değerleri ise onların frekanslarından oluşan bir sözlükle geri dönmektedir. Geri döndürülen
+sözlüğün temsili görünümü şöyledir:
+
+.. code-block:: python
+
+   {
+       ('a', 'l'): 38,
+       ('a', 'k'): 29,
+       ('n', 'e'): 18,
+       ....
+   }
+
+Metot içerisinde tek elemana düşmüş alt sözcükler daha fazla birleştirilemeyeceği için boşuna sözlüğe
+dahil edilmemiştir.
+
+En İyi Çiftin Seçilmesi
+----------------------------
+
+Şimdi bizim bu geri döndürülen sözlükteki en yüksek frekans değerine ilişkin demeti elde etmemiz
+gerekir. Bu işlemi sınıfın ``_get_best_pair`` isimli metoduna yaptırabiliriz:
+
+.. code-block:: python
+
+   def _get_best_pair(self, freqs_dict):
+       if not freqs_dict:
+           return None
+       max_pair = max(freqs_dict, key=lambda pair: (freqs_dict[pair], pair))
+       return max_pair
+
+Burada en büyük frekansa sahip demetin built-in ``max`` fonksiyonuyla nasıl bulunduğuna dikkat ediniz.
+Anımsayacağınız gibi ``max`` fonksiyonunun ``key`` parametresine bir fonksiyon girilirse ``max`` her
+eleman için bu fonksiyonu çağırıp bu fonksiyonun verdiği maksimum değere ilişkin elemanı geri
+döndürmektedir. Biz lambda fonksiyonunda yalnızca ``freqs_dict[pair]`` ifadesiyle geri dönebilirdik.
+Bir demetle geri dönmemizin nedeni atom sıralarının değişmesi sonucunda aynı birleştirmenin
+yapılabilmesine (reproducibility) olanak vermek içindir. Bu haliyle ``max`` fonksiyonu frekans ve ikili
+demetten oluşan demetleri karşılaştıracaktır. Böylece aynı frekansa sahip olan demetlerden leksikografik
+olarak sonda bulunan seçilecektir. Peki lambda ifadesi aşağıdaki gibi olsaydı ne olurdu:
+
+.. code-block:: python
+
+   max_pair = max(freqs_dict, key=lambda pair: freqs_dict[pair])
+
+Burada Python'un ``max`` fonksiyonu ilk görülen en büyük frekanslı demeti geri döndürecektir. Onların
+sırası değiştiğinde de geri döndürülen demet değişecektir. Algoritmanın tanıtıldığı orijinal
+*Sennrich ve ark. (2016)* makalesinde yukarıdaki lambda ifadesi kullanılmıştır.
+
+Peki aynı frekansa sahip çiftlerin bulunduğu durumda birleştirme sırası herhangi bir değişikliğe yol
+açar mı? Yanıt evet'tir. Çünkü bir çifti birleştirdikten sonra yeniden çift frekansları
+hesaplandığında bu frekanslar artık farklılaşacaktır. Tabii derlem çok büyükse zaman içerisinde bunun
+etkisi de azalabilecektir.
+
+Burada önemli bir nokta üzerinde de durmak istiyoruz. Eğer yan yana alt sözcüklerin en yüksek frekansı
+1 ise bu durum artık yan yana alt sözcük birleştirmesinin sonuna gelindiği anlamına gelmektedir. Bu
+durumda döngüden çıkılması gerekir. Çünkü yinelenmeyen yan yana alt sözcüklerin birleştirilmesinin bir
+anlamı yoktur.
+
+train Metodunun Güncel Hali
+-------------------------------
+
+Artık ``train`` metodumuz şu durumdadır:
+
+.. code-block:: python
+
+   def train(self, tokens):
+       self._build_word_freqs(tokens)
+       self._init_splits()
+
+       initial_vocab = set()
+       for word in self.splits:
+           initial_vocab.update(word)
+       current_vocab_size = len(initial_vocab)
+
+       while current_vocab_size < self.vocab_size:
+           freq_dict = self._get_pair_freqs()
+           best_pair = self._get_best_pair(freq_dict)
+           best_freq = freq_dict[best_pair]
+           if best_freq < 2:
+               break
+           #...
+       #...
+
+
+BPETokenizer — Birleştirme, Tokenize ve Decode
+==================================================
+
+_merge_pair Metodu
+---------------------
+
+Şimdi kaldığımız yerden devam edelim. En çok karşılaşılan yan yana alt sözcüğü elde ettikten sonra bizim
+tüm sözcükleri dolaşarak bunları birleştirmemiz gerekir. Tabii bu işlemi aşağıdaki gibi bir metoda
+yaptırabiliriz:
+
+.. code-block:: python
+
+   def _merge_pair(self, pair):
+       merged = pair[0] + pair[1]
+       first, second = pair
+       for word in self.splits:
+           split = self.splits[word]
+           merged_list = []
+           i = 0
+           while i < len(split) - 1:
+               if split[i] == first and split[i + 1] == second:
+                   merged_list.append(merged)
+                   i += 2
+               else:
+                   merged_list.append(split[i])
+                   i += 1
+           if i == len(split) - 1:
+               merged_list.append(split[-1])
+           self.splits[word] = merged_list
+
+Burada önce ``self.splits`` içerisindeki tüm anahtarlar (yani sözcükler) dolaşılmıştır. Sonra bu
+sözcüklere karşı gelen alt sözcük listeleri elde edilmiştir. Birleştirmenin eski listeler üzerinde
+yapılması iyi bir teknik değildir. Yeni boş bir liste yaratılıp birleştirmenin yeni liste üzerinde
+yapılması uygun olur. ``while`` döngüsündeki koşula dikkat ediniz. Bu koşul listenin taşırılmaması için
+böyle oluşturulmuştur. Yan yana elemanlar birleştirildiğinde indeksin 2 artırıldığını,
+birleştirilmediğinde 1 artırıldığını görüyorsunuz. Döngüden çıkıldığında indeks son alt sözcükte
+kalabilmektedir. Bu durumda o alt sözcük de listeye eklenmiştir.
+
+Biz artık sözcükleri yan yana alt sözcükleri birleştirerek atomize ettik. Peki bir metni buradaki alt
+sözcükler yoluyla nasıl atomlarına ayrıştırabiliriz? İşte bizim ``self.splits`` sözlüğüne bakarak bunu
+yapmamız çok zor olur. Bunun için en makul yöntem her birleştirme yapıldığında birleştirme kurallarının
+bir listede biriktirilmesidir. Böylece bir metin atomlarına ayrılacağı zaman tek tek bu kurallar
+uygulanabilir. ``while`` döngüsü her yinelendikçe sözcük hazinesi birleştirmeden dolayı bir fazlalanmaktadır.
+Dolayısıyla ``current_vocab_size`` her defasında 1 artırılmalıdır.
+
+train Metodunun Ara Hali
+----------------------------
+
+Artık ``train`` metodumuz şu durumdadır:
+
+.. code-block:: python
+
+   def train(self, tokens):
+       self._build_word_freqs(tokens)
+       self._init_splits()
+
+       initial_vocab = set()
+       for word in self.splits:
+           initial_vocab.update(word)
+       current_vocab_size = len(initial_vocab)
+
+       while current_vocab_size < self.vocab_size:
+           freq_dict = self._get_pair_freqs()
+           best_pair = self._get_best_pair(freq_dict)
+           best_freq = freq_dict[best_pair]
+           if best_freq < 2:
+               break
+           self._merge_pair(best_pair)
+           self.merge_rules.append(best_pair)
+           current_vocab_size += 1
+       #...
+
+Artık ``while`` döngüsünde yapmamız gereken her şeyi yapmış durumdayız. Döngüden çıktığımızda nihai
+sözcük hazinesini oluşturabiliriz:
+
+.. code-block:: python
+
+   for word, freqs in self.word_freqs.items():
+       for subword in self.splits[word]:
+           self.vocab[subword] += freqs
+
+train Metodunun Son Hali
+-----------------------------
+
+Artık ``train`` metodumuz son haline gelmiştir:
+
+.. code-block:: python
+
+   def train(self, tokens):
+       self._build_word_freqs(tokens)
+       self._init_splits()
+
+       initial_vocab = set()
+       for word in self.splits:
+           initial_vocab.update(word)
+       current_vocab_size = len(initial_vocab)
+
+       while current_vocab_size < self.vocab_size:
+           freq_dict = self._get_pair_freqs()
+           best_pair = self._get_best_pair(freq_dict)
+           best_freq = freq_dict[best_pair]
+           if best_freq < 2:
+               break
+           self._merge_pair(best_pair)
+           self.merge_rules.append(best_pair)
+           current_vocab_size += 1
+
+       for word, freqs in self.word_freqs.items():
+           for subword in self.splits[word]:
+               self.vocab[subword] += freqs
+
+tokenize Metodu
+------------------
+
+Biz ``BPETokenizer`` sınıfında ``train`` işlemini yaptık. Ancak eğitim sonrasında yapmamız gereken
+başka işlemler de var. Örneğin bizim ``self.merge_rules`` birleştirme kurallarını izleyerek bir metni
+atomlarına ayırabilmemiz gerekir. Bizim zaten asıl amacımız metni atomlarına ayrıştırıp onlara bir
+sayı karşılık düşürmek. Bunun için ``BPETokenizer`` sınıfına ``tokenize`` isimli bir metot
+ekleyebiliriz:
+
+.. code-block:: python
+
+   def tokenize(self, tokens):
+       result = []
+       for token in tokens:
+           split = self._word_to_split(token)
+           subwords = self._apply_merge_rules(split)
+           result.append((token, subwords))
+       return result
+
+Bu metot parametre olarak yazıyı değil, yazının sözcüklere ayrılmış atomlarını almaktadır. Çünkü BPE
+yönteminde algoritmayı işletmeden önce metnin sözcük tabanlı atomlarına ayrılmış olması gerekir. Biz
+bu işlemi spaCy kütüphanesi ile yapmıştık. Metotta sözcükler tek tek dolaşılmış, ``merge_rules``
+kuralları ``_apply_merge_rules`` metoduna yaptırılmıştır. ``tokenize`` metodu ikili demetlerden oluşan
+bir listeye geri dönmektedir. Demetin ilk elemanı alt sözcüklere ayrıştırılacak sözcüğü, ikinci elemanı
+ise onun ayrıştırılması sonucunda elde edilen alt sözcük listesini belirtmektedir. ``_apply_merge_rules``
+metodu aslında daha önce yazmış olduğumuz ``_merge_pair`` algoritmasına oldukça benzemektedir:
+
+.. code-block:: python
+
+   def _apply_merge_rules(self, split):
+       for tok_left, tok_right in self.merge_rules:
+           merged = tok_left + tok_right
+           i = 0
+           merge_list = []
+           while i < len(split) - 1:
+               if split[i] == tok_left and split[i + 1] == tok_right:
+                   merge_list.append(merged)
+                   i += 2
+               else:
+                   merge_list.append(split[i])
+                   i += 1
+           if i == len(split) - 1:
+               merge_list.append(split[-1])
+           split = merge_list
+       return split
+
+Burada birleştirme kuralları tek tek gözden geçirilmiş ve bu kurallar sırasıyla uygulanmaya
+çalışılmıştır. Böylece giderek kurallar uygulandıkça birleştirme son noktasına erişecektir.
+
+.. note::
+
+   Orijinal ders notundaki ``tokenize`` metodunda ``self._word_to_splits(token)`` çağrısı yapılmaktaydı
+   (çoğul ``splits``). Önceki derste de aynı tutarsızlıkla karşılaşmıştık; metodun tanımlı adı
+   ``_word_to_split``'tir (tekil). Yukarıda doğru adla verilmiştir.
+
+Şimdi testimizi aşağıdaki gibi bir programla yapabiliriz:
+
+.. code-block:: python
+
+   all_tokens = (token.text for token in spacy_word_tokenizer(corpus))
+   bpe_tokenizer = BPETokenizer(300)
+   bpe_tokenizer.train(all_tokens)
+
+   text = ['Bugün puslu havada köpek havladı']
+   tokens = (token.text for token in spacy_word_tokenizer(text))
+   result_tokens = bpe_tokenizer.tokenize(tokens)
+   for word, subwords in result_tokens:
+       print(f'{word} --> {subwords}')
+
+decode Metodu
+----------------
+
+Yukarıda ``tokenize`` işleminin tersi de yapılabilir. Yani bizim elimizde BPE yöntemiyle alt sözcüklere
+ayrılmış bir atom listesi olabilir. Biz de onu birleştirerek yeniden yazıyı elde etmek isteyebiliriz.
+Bunun için ``decode`` isimli metodu şöyle yazabiliriz:
+
+.. code-block:: python
+
+   def decode(self, tokens):
+       raw = ''.join(tokens)
+       text = raw.replace(self.end_of_word_symbol, ' ').strip()
+       result = re.sub(r'\s+([,!.;:?])', r'\1', text)
+       return result
+
+Burada önce alt sözcükler birleştirilmiş sonra da ``</w>`` öbeği yerine ``' '`` karakteri
+getirilmiştir. Ancak bu durumda noktalama işaretleri ayrı birer atom biçiminde ele alındığından dolayı
+noktalama işaretlerinin solundaki boşluklar da atılmıştır. ``decode`` metodunu aşağıdaki gibi bir kodla
+test edebilirsiniz:
+
+.. code-block:: python
+
+   corpus = [
+       "Bugün hava çok güzel. Parka gidelim mi?",
+       "Bugün lastiğin havası sönmüş, ben onu parkta şişirdim.",
+       "Alsancak'ta al bir bayrak gördüm. Prof. Dr. Ali Serçe de gelecek.",
+       ]
+
+   all_tokens = (token.text for token in spacy_word_tokenizer(corpus))
+   bpe_tokenizer = BPETokenizer(300)
+   bpe_tokenizer.train(all_tokens)
+
+   text = ['Bugün, puslu havada köpek havladı!']
+   tokens = (token.text for token in spacy_word_tokenizer(text))
+   result_tokens = bpe_tokenizer.tokenize(tokens)
+   for word, subwords in result_tokens:
+       print(f'{word} --> {subwords}')
+
+   all_subwords = []
+   for _, subwords in result_tokens:
+       all_subwords.extend(subwords)
+
+   decoded_text = bpe_tokenizer.decode(all_subwords)
+   print(decoded_text)
+
+
+BPETokenizer — Yardımcı Metotlar, İyileştirilmiş Sürüm ve Kalıcı Depolama
+===========================================================================
+
+Yardımcı Metotlar: get_vocab ve get_merge_rules
+--------------------------------------------------
+
+Şimdi son olarak ``BPETokenizer`` sınıfımıza birkaç yardımcı metot da ekleyelim. Biz sınıfımızda bir
+sözcük hazinesini ``self.vocab`` sözlüğü biçiminde oluşturduk. Bu sözlük aşağıdaki gibi bir yapıdaydı:
+
+.. code-block:: python
+
+   defaultdict(int,
+           {'bugün</w>': 2,
+            'hav': 2,
+            'a</w>': 2,
+            'ç': 2,
+            'o': 3,
+            'k</w>': 3,
+            'gü': 1,
+            'z': 1,
+            'e': 5,
+            'l</w>': 2,
+            '.</w>': 6,
+            'park': 2,
+            'g': 3,
+            'i': 4,
+            'd': 3,
+            ...
+           })
+
+.. note::
+
+   Orijinal ders notunda bu çıktının başında ``efaultdict`` yazılmaktaydı (baştaki ``d`` harfi eksikti).
+   Bu, Python'un ``defaultdict`` nesnesinin ``repr`` çıktısının kopyalanırken ilk karakterinin düştüğünü
+   göstermektedir; yukarıda ``defaultdict(int, ...)`` biçiminde düzeltilmiştir.
+
+Sözlüğün anahtarları alt sözcüklerden, değerleri de onların frekanslarından oluşuyordu. Ancak sözcük
+hazinelerinin yüksek frekanstan düşük frekansa doğru sıraya dizilmiş bir biçimde bulundurulması daha
+kullanışlı bir temsil oluşturmaktadır. İşte bu işlemi biz ``get_vocab`` isimli bir metoda yaptırabiliriz:
+
+.. code-block:: python
+
+   def get_vocab(self, top_n=None):
+       sorted_vocab = sorted(self.vocab.items(), key=lambda x: x[1], reverse=True)
+       if top_n:
+           return sorted_vocab[:top_n]
+       return sorted_vocab
+
+Burada metodun ``top_n`` parametresine bir değer girilirse metot tüm sözcük hazinesini değil en yüksek
+frekanslı ilk n tane alt sözcükten oluşan bir sözcük hazinesini geri döndürmektedir.
+
+Benzer biçimde ilk n tane birleştirme kuralını geri döndüren bir metot da yazılabilir:
+
+.. code-block:: python
+
+   def get_merge_rules(self, top_n=None):
+       if top_n:
+           return self.merge_rules[:top_n]
+       return self.merge_rules
+
+Aşağıda tüm BPE gerçekleştirimini bütünsel olarak veriyoruz.
+
+BPETokenizer — Tam Kod (bpe_charbased_tokenizer.py)
+-------------------------------------------------------
+
+.. code-block:: python
+
+   # bpe_charbased_tokenizer.py
+
+   import normalizer
+   import spacy
+   import re
+
+   def spacy_word_tokenizer(corpus):
+       tn = normalizer.build_spacy_turkish_normalizer()
+       normalized_corpus = [tn(text) for text in corpus]
+
+       nlp = spacy.load('tr_core_news_md')
+       for text in normalized_corpus:
+           doc = nlp(text)
+           for token in doc:
+               yield token
+
+   from collections import defaultdict
+
+   class BPETokenizer:
+       def __init__(self, vocab_size, end_of_word_symbol='</w>'):
+           self.vocab_size = vocab_size
+           self.end_of_word_symbol = end_of_word_symbol
+           self.word_freqs = defaultdict(int)
+           self.vocab = defaultdict(int)
+           self.splits = {}
+           self.merge_rules = []
+
+       def _build_word_freqs(self, tokens):
+           for word in tokens:
+               self.word_freqs[word] += 1
+
+       def _word_to_splits(self, word):
+           chars = list(word)
+           chars[-1] += self.end_of_word_symbol
+           return chars
+
+       def _init_splits(self):
+           self.splits = {}
+           for word in self.word_freqs:
+               self.splits[word] = self._word_to_splits(word)
+
+       def _get_pair_freqs(self):
+           freqs_dict = defaultdict(int)
+           for word, subwords in self.splits.items():
+               if len(subwords) < 2:
+                   continue
+               for i in range(len(subwords) - 1):
+                   pair = subwords[i], subwords[i + 1]
+                   freqs_dict[pair] += self.word_freqs[word]
+           return freqs_dict
+
+       def _merge_pair(self, pair):
+           merged = pair[0] + pair[1]
+           first, second = pair
+           for word in self.splits:
+               split = self.splits[word]
+               merged_list = []
+               i = 0
+               while i < len(split) - 1:
+                   if split[i] == first and split[i + 1] == second:
+                       merged_list.append(merged)
+                       i += 2
+                   else:
+                       merged_list.append(split[i])
+                       i += 1
+               if i == len(split) - 1:
+                   merged_list.append(split[-1])
+               self.splits[word] = merged_list
+
+       def _get_best_pair(self, freqs_dict):
+           if not freqs_dict:
+               return None
+           max_pair = max(freqs_dict, key=lambda pair: (freqs_dict[pair], pair))
+           return max_pair
+
+       def _apply_merge_rules(self, split):
+           for tok_left, tok_right in self.merge_rules:
+               merged = tok_left + tok_right
+               i = 0
+               merge_list = []
+               while i < len(split) - 1:
+                   if split[i] == tok_left and split[i + 1] == tok_right:
+                       merge_list.append(merged)
+                       i += 2
+                   else:
+                       merge_list.append(split[i])
+                       i += 1
+               if i == len(split) - 1:
+                   merge_list.append(split[-1])
+               split = merge_list
+           return split
+
+       def train(self, tokens):
+           self._build_word_freqs(tokens)
+           self._init_splits()
+
+           initial_vocab = set()
+           for word in self.splits:
+               initial_vocab.update(word)
+           current_vocab_size = len(initial_vocab)
+
+           while current_vocab_size < self.vocab_size:
+               freq_dict = self._get_pair_freqs()
+               best_pair = self._get_best_pair(freq_dict)
+               best_freq = freq_dict[best_pair]
+               if best_freq < 2:
+                   break
+               self._merge_pair(best_pair)
+               self.merge_rules.append(best_pair)
+               current_vocab_size += 1
+
+           for word, freqs in self.word_freqs.items():
+               for subword in self.splits[word]:
+                   self.vocab[subword] += freqs
+
+       def tokenize(self, tokens):
+           result = []
+           for token in tokens:
+               split = self._word_to_splits(token)
+               subwords = self._apply_merge_rules(split)
+               result.append((token, subwords))
+           return result
+
+       def decode(self, tokens):
+           raw = ''.join(tokens)
+           text = raw.replace(self.end_of_word_symbol, ' ').strip()
+           result = re.sub(r'\s+([,!.;:?])', r'\1', text)
+           return result
+
+       def get_vocab(self, top_n=None):
+           sorted_vocab = sorted(self.vocab.items(), key=lambda x: x[1], reverse=True)
+           if top_n:
+               return sorted_vocab[:top_n]
+           return sorted_vocab
+
+       def get_merge_rules(self, top_n=None):
+           if top_n:
+               return self.merge_rules[:top_n]
+           return self.merge_rules
+
+   # Test
+
+   corpus = [
+       "Bugün hava çok güzel. Parka gidelim mi?",
+       "Bugün lastiğin havası sönmüş, ben onu parkta şişirdim.",
+       "Alsancak'ta al bir bayrak gördüm. Prof. Dr. Ali Serçe de gelecek.",
+       ]
+
+   all_tokens = (token.text for token in spacy_word_tokenizer(corpus))
+   bpe_tokenizer = BPETokenizer(300)
+   bpe_tokenizer.train(all_tokens)
+
+   text = ['Bugün, puslu havada köpek havladı!']
+   tokens = (token.text for token in spacy_word_tokenizer(text))
+   result_tokens = bpe_tokenizer.tokenize(tokens)
+   for word, subwords in result_tokens:
+       print(f'{word} --> {subwords}')
+
+   all_subwords = []
+   for _, subwords in result_tokens:
+       all_subwords.extend(subwords)
+
+   decoded_text = bpe_tokenizer.decode(all_subwords)
+   print(decoded_text)
+
+Gerçek bir Türkçe metin dosyasıyla eğitim için aşağıdaki yapı kullanılabilir:
+
+.. code-block:: python
+
+   import itertools
+
+   with open('../Data/turkish_news.txt', encoding='utf-8') as f:
+       all_tokens = (token.text for token in spacy_word_tokenizer(itertools.islice(f, 100)))
+       bpe_tokenizer = BPETokenizer(10000)
+       bpe_tokenizer.train(all_tokens)
+
+Burada ``itertools.islice`` tüm dosyanın değil yalnızca ilk n satırın eğitime sokulması için
+kullanılmıştır. Bu çağrıyı kaldırabilirsiniz.
+
+BPETokenizer Performans İyileştirmesi
+-----------------------------------------
+
+Yukarıdaki ``BPETokenizer`` sınıfının uyguladığı algoritma nasıl hızlandırılabilir? Bir algoritmayı
+hızlandırmak istiyorsanız öncelikle yavaşlığın nereden kaynaklanabileceği hakkında hipotezler
+oluşturmanız gerekir. Sınıfın işleyişinde en önemli zaman kaybı ``train`` metodundaki eğitimde
+oluşmaktadır. Bu analiz sonucunda algoritmayı hızlandırmak için şu konuların üzerine odaklanılabilir:
+
+- ``get_pair_freqs`` ile her defasında tüm alt sözcüklerin frekanslarının hesaplanmasına gerek yoktur.
+  Yalnızca birleştirmeden etkilenen sözcüklerin frekansları yeniden hesaplanabilir.
+
+- ``_get_best_pair`` metodu da her defasında tüm frekans listesi dolaşılarak değil bir heap ağacı
+  oluşturularak hızlandırılabilir.
+
+- ``_merge_pair`` metodunda birleştirme için sıfırdan tüm sözcüklerin gözden geçirilmesi yerine yalnızca
+  ilgili çift bulunan sözcükler birleştirme işlemine sokulabilir.
+
+``BPETokenizer`` sınıfının yukarıda bahsettiğimiz performans düşürücü unsurlarını bertaraf ederek onun
+daha hızlı çalışmasını sağlayan düzeltmeler *Claude AI*'a yaptırılmıştır. Aşağıda kodun bu halini
+veriyoruz.
+
+BPETokenizer — İyileştirilmiş Sürüm (bpe_charbased_tokenizer_improved.py)
+-----------------------------------------------------------------------------
+
+.. code-block:: python
+
+   # bpe_charbased_tokenizer_improved.py
+
+   import re
+   from collections import defaultdict
+   import heapq
+
+   import normalizer
+   import spacy
+
+   def spacy_word_tokenizer(corpus):
+       tn = normalizer.build_spacy_turkish_normalizer()
+       normalized_corpus = [tn(text) for text in corpus]
+
+       nlp = spacy.load('tr_core_news_md')
+       for text in normalized_corpus:
+           doc = nlp(text)
+           for token in doc:
+               yield token
+
+   class BPETokenizer:
+       def __init__(self, vocab_size, end_of_word_symbol='</w>'):
+           self.vocab_size = vocab_size
+           self.end_of_word_symbol = end_of_word_symbol
+           self.word_freqs = defaultdict(int)
+           self.vocab = defaultdict(int)
+           self.splits = {}
+           self.merge_rules = []
+
+       def _build_word_freqs(self, tokens):
+           for word in tokens:
+               self.word_freqs[word] += 1
+
+       def _word_to_splits(self, word):
+           chars = list(word)
+           chars[-1] += self.end_of_word_symbol
+           return chars
+
+       def _init_splits(self):
+           self.splits = {}
+           for word in self.word_freqs:
+               self.splits[word] = self._word_to_splits(word)
+
+       # Ters indeks: her çift için hangi sözcüklerin o çifti içerdiğini tutar.
+       # Birleştirme sonrası tüm korpus yerine yalnızca ilgili sözcükler işlenir.
+       def _build_pair_index(self):
+           pair_to_words = defaultdict(set)
+           for word, split in self.splits.items():
+               for i in range(len(split) - 1):
+                   pair = (split[i], split[i + 1])
+                   pair_to_words[pair].add(word)
+           return pair_to_words
+
+       # Başlangıçta bir kez hesaplanır; sonraki adımlarda delta ile güncellenir.
+       def _compute_pair_freqs(self):
+           pair_freqs = defaultdict(int)
+           for word, split in self.splits.items():
+               freq = self.word_freqs[word]
+               for i in range(len(split) - 1):
+                   pair = (split[i], split[i + 1])
+                   pair_freqs[pair] += freq
+           return pair_freqs
+
+       # heapq + lazy deletion: en iyi çift O(log P) ile alınır.
+       # Heap'teki stale girişler pair_freqs ile karşılaştırılarak atlanır.
+       def _build_heap(self, pair_freqs):
+           heap = []
+           for pair, freq in pair_freqs.items():
+               heapq.heappush(heap, (-freq, pair))
+           return heap
+
+       def _get_best_pair(self, heap, pair_freqs):
+           while heap:
+               neg_freq, pair = heapq.heappop(heap)
+               current_freq = pair_freqs.get(pair, 0)
+               # Lazy deletion: heap'teki frekans güncel değilse atla
+               if current_freq == -neg_freq and current_freq >= 2:
+                   return pair, current_freq
+           return None, 0
+
+       def _update_freq(self, p, delta, word, pair_freqs, pair_to_words, heap):
+           pair_freqs[p] += delta
+           if delta > 0:
+               pair_to_words[p].add(word)
+               heapq.heappush(heap, (-pair_freqs[p], p))
+           else:
+               pair_to_words[p].discard(word)
+
+       # --- Delta güncellemesi ---
+       # Birleştirme sonrası tüm korpusu yeniden taramak yerine yalnızca
+       # bu çifti içeren sözcüklerin split'lerini günceller.
+       # Her birleştirme noktasında:
+       #   - Sol komşu çift (prev, first+second) ve sağ komşu çift
+       #     (first+second, next) oluşturulduğu için frekansları artırılır (+freq).
+       #   - Yerini alan eski (prev, first) ve (second, next) çiftlerinin
+       #     frekansları düşürülür (-freq).
+       #   - Birleştirilen (first, second) çifti zaten pair_to_words'ten
+       #     pop edildiği için ayrıca işleme gerek yok.
+       def _merge_pair(self, pair, pair_freqs, pair_to_words, heap):
+           first, second = pair
+           merged = first + second
+           affected_words = pair_to_words.pop(pair, set())
+
+           for word in affected_words:
+               split = self.splits[word]
+               freq = self.word_freqs[word]
+               new_split = []
+               i = 0
+               while i < len(split) - 1:
+                   if split[i] == first and split[i + 1] == second:
+                       if i > 0:
+                           prev = split[i - 1]
+                           self._update_freq((prev, first),  -freq, word, pair_freqs, pair_to_words, heap)
+                           self._update_freq((prev, merged), +freq, word, pair_freqs, pair_to_words, heap)
+                       if i + 2 < len(split):
+                           nxt = split[i + 2]
+                           self._update_freq((second, nxt), -freq, word, pair_freqs, pair_to_words, heap)
+                           self._update_freq((merged, nxt), +freq, word, pair_freqs, pair_to_words, heap)
+                       new_split.append(merged)
+                       i += 2
+                   else:
+                       new_split.append(split[i])
+                       i += 1
+               if i == len(split) - 1:
+                   new_split.append(split[-1])
+               self.splits[word] = new_split
+
+       def _apply_merge_rules(self, split):
+           for tok_left, tok_right in self.merge_rules:
+               merged = tok_left + tok_right
+               i = 0
+               merge_list = []
+               while i < len(split) - 1:
+                   if split[i] == tok_left and split[i + 1] == tok_right:
+                       merge_list.append(merged)
+                       i += 2
+                   else:
+                       merge_list.append(split[i])
+                       i += 1
+               if i == len(split) - 1:
+                   merge_list.append(split[-1])
+               split = merge_list
+           return split
+
+       def train(self, tokens):
+           self._build_word_freqs(tokens)
+           self._init_splits()
+
+           initial_vocab = set()
+           for word in self.splits:
+               initial_vocab.update(word)
+           current_vocab_size = len(initial_vocab)
+
+           # Başlangıçta bir kez hesapla; sonra delta ile güncelle
+           pair_freqs = self._compute_pair_freqs()
+           pair_to_words = self._build_pair_index()
+           heap = self._build_heap(pair_freqs)
+
+           while current_vocab_size < self.vocab_size:
+               best_pair, best_freq = self._get_best_pair(heap, pair_freqs)
+               if best_pair is None:
+                   break
+               self._merge_pair(best_pair, pair_freqs, pair_to_words, heap)
+               self.merge_rules.append(best_pair)
+               current_vocab_size += 1
+
+           for word, freq in self.word_freqs.items():
+               for subword in self.splits[word]:
+                   self.vocab[subword] += freq
+
+       def tokenize(self, tokens):
+           result = []
+           for token in tokens:
+               split = self._word_to_splits(token)
+               subwords = self._apply_merge_rules(split)
+               result.append((token, subwords))
+           return result
+
+       def decode(self, tokens):
+           raw = ''.join(tokens)
+           text = raw.replace(self.end_of_word_symbol, ' ').strip()
+           result = re.sub(r'\s+([,!.;:?])', r'\1', text)
+           return result
+
+       def get_vocab(self, top_n=None):
+           sorted_vocab = sorted(self.vocab.items(), key=lambda x: x[1], reverse=True)
+           if top_n:
+               return sorted_vocab[:top_n]
+           return sorted_vocab
+
+       def get_merge_rules(self, top_n=None):
+           if top_n:
+               return self.merge_rules[:top_n]
+           return self.merge_rules
+
+   import time
+   import itertools
+
+   start = time.time()
+   f = open('../Data/turkish_news.txt', encoding='utf-8')
+
+   all_tokens = (token.text for token in spacy_word_tokenizer(itertools.islice(f, 1000)))
+   bpe_tokenizer = BPETokenizer(10000)
+   bpe_tokenizer.train(all_tokens)
+   stop = time.time()
+
+   print(stop - start)
+
+   text = ['Bugün, puslu havada köpek havladı!']
+   tokens = (token.text for token in spacy_word_tokenizer(text))
+   result_tokens = bpe_tokenizer.tokenize(tokens)
+   for word, subwords in result_tokens:
+       print(f'{word} --> {subwords}')
+
+   all_subwords = []
+   for _, subwords in result_tokens:
+       all_subwords.extend(subwords)
+
+   decoded_text = bpe_tokenizer.decode(all_subwords)
+   print(decoded_text)
+
+   f.close()
+
+Algoritma Hızlandırma Stratejileri
+--------------------------------------
+
+Peki bir algoritma üzerinde çalışırken algoritmanın çalışması çok zaman alıyorsa hızlandırma için ne
+yapılmalı? İşte bu tür durumlarda önce algoritma analiz edilip tamamen algoritmik düzeyde hızlandırmaya
+çalışılmalıdır. Daha fazla algoritmik hızlandırma yapılamıyorsa kullanılan kütüphaneler ve araçlar gözden
+geçirilmelidir. Örneğin NumPy ve Pandas kütüphaneleri C'de yazıldığı için genel olarak daha hızlı çalışma
+eğilimindedir. Eğer hâlâ hız yetmiyorsa bu durumda paralleştirme çalışması yapılabilir. Paralleştirme
+*bir işin farklı kısımlarını makinedeki birden fazla işlemci ya da çekirdekte aynı anda çalıştırma*
+etkinliğidir. Yukarıda ``BPETokenizer`` sınıfı makinemiz kaç işlemci ya da çekirdeğe sahip olursa olsun
+onların yalnızca bir tanesini kullanmaktadır. Ancak her türlü algoritmanın paralleştirilmesi de mümkün
+olmayabilir. (Tabii paralel algoritmalar için belirli bir kurulum zamanı da gerekmektedir. Dolayısıyla
+yapılacak paralleştirmenin oluşan kayıptan daha fazla kazanç sağlaması gerekir.) Eğer hâlâ istenilen
+sonuç elde edilmiyorsa makinenin olanakları artırılabilir. Yani program daha güçlü bir makinede
+çalıştırılabilir. Eğer hâlâ tatmin edici bir sonuç elde edilmiyorsa son olarak *dağıtık (distributed)*
+çalıştırma yöntemi denenebilir. Bu sürecin adımları şöyle sıralanabilir:
+
+.. image:: _static/tokenization/algo-hizlandirma.png
+   :alt: Algoritma hızlandırma adımları
+   :align: center
+
+1. **Algoritmayı İyileştir** (aynı dil, sıfır maliyet)
+
+   - Karmaşıklık analizi yap: O(n²) döngü var mı? Gereksiz tekrar var mı? Veri yapısını değiştir
+     (dict, heap, set vb.)
+   - Önbellekle (caching / memoization): Aynı hesabı tekrar yapıyor musun? ``@functools.lru_cache``
+     veya manuel dict cache.
+   - Erken çıkış & lazy evaluation: Gereksiz iterasyonları kes; generator kullan, her şeyi belleğe
+     yükleme.
+
+2. **Python'u Daha Verimli Kullan**
+
+   - Built-in'leri tercih et: ``collections.Counter``, ``defaultdict``, ``heapq``; liste içlemi döngüden
+     hızlıdır.
+   - String & I/O optimizasyonu: ``join()`` kullan, ``+=`` ile string birleştirmeden kaçın; dosya
+     okumada buffer boyutunu artır.
+
+3. **Vektörelleştir** (NumPy / SciPy)
+
+   - Python döngüsünü NumPy dizi operasyonuna çevir.
+   - Frekans hesapları için ``np.unique``, ``np.bincount`` kullan.
+
+4. **Paralleştir**
+
+   - CPU-bound → ``multiprocessing``; ``ProcessPoolExecutor`` ile parçalara böl.
+   - I/O-bound → ``asyncio`` veya ``ThreadPoolExecutor``.
+
+5. **JIT / Derleme**
+
+   - Numba → ``@njit`` (sayısal, döngü-ağır kod).
+   - Cython → ``.pyx`` dosyası (genel Python kodu).
+
+6. **C / C++ Ekstensiyonu Yaz**
+
+   - ``ctypes`` / ``cffi`` ile mevcut C kütüphanesi sar.
+   - ``Pybind11`` ile C++ → Python binding.
+
+7. **GPU'ya Taşı**
+
+   - CuPy → NumPy API'ı, GPU üzerinde.
+   - RAPIDS / cuML.
+   - PyTorch / JAX (tensor operasyonları varsa).
+
+8. **Dağıtık / Cluster Hesaplama**
+
+   - Ray → tek makinede çok çekirdek veya cluster.
+   - Dask → büyük veri, lazy computation.
+
+Eğitilmiş Modelin Kalıcı Olarak Saklanması
+------------------------------------------------
+
+Peki bu tür algoritmaların çalıştırılması sonucunda eğitilmiş veri ikincil belleğe nasıl saklanabilir?
+Eğer hazır kütüphaneleri ya da framework'leri kullanıyorsanız saklama işlemini onların sağladığı
+fonksiyonlarla ve metotlarla yapmalısınız. Ancak algoritmaları sıfırdan siz gerçekleştirmişseniz bu
+durumda onların saklanması da sizin sorumluluk alanınıza girecektir. Bu tür durumlarda en basit çözüm
+Python'un standart kütüphanesindeki *nesneleri seri hale getirme (object serialization)* mekanizmasını
+kullanmaktır. Örneğin:
+
+.. code-block:: python
+
+   import itertools
+   import pickle
+
+   f = open('../Data/turkish_news.txt', encoding='utf-8')
+
+   all_tokens = (token.text for token in spacy_word_tokenizer(itertools.islice(f, 100)))
+   bpe_tokenizer = BPETokenizer(10000)
+   bpe_tokenizer.train(all_tokens)
+
+   f.close()
+
+   with open('test.dat', 'wb') as f:
+       pickle.dump(bpe_tokenizer, f)
+
+   with open('test.dat', 'rb') as f:
+       saved_object = pickle.load(f)
+
+Python'un ``pickle`` modülündeki nesne serileştirme mekanizması geneldir. Bu nedenle her durumda en uygun
+performansı sağlayamayabilmektedir. Uygulamacı verilerini kalıcı hale getirmek için verilerin formatına
+daha uygun ve daha etkin dosya formatlarını tercih edebilir. Örneğin bilimsel veriler ve sinir ağı
+parametreleri için Parquet formatı ve HDF (Hierarchical Data Format) formatı çokça tercih edilmektedir.
+Aşağıdaki tablo size bu konuda bir fikir verebilir:
+
+.. list-table:: Veri Türüne Göre Önerilen Kalıcı Depolama Formatları
+   :header-rows: 1
+   :widths: 22 28 30
+
+   * - Veri Türü
+     - Önerilen Format
+     - Sebep
+   * - Sözcük vektörleri (embeddings)
+     - NumPy ``.npy`` / ``.npz``
+     - Hızlı, kompakt, tip güvenli
+   * - Vocab / token→id eşlemeleri
+     - JSON veya SQLite
+     - İnsan okunabilir, taşınabilir
+   * - Büyük corpus / metin veri setleri
+     - Apache Parquet (pyarrow) veya HDF5
+     - Sütun bazlı, sıkıştırılmış, verimli sorgulama
+   * - TF-IDF / sparse matrisler
+     - scipy.sparse (``.npz``)
+     - Seyrek matris desteği
+   * - Eğitim istatistikleri, config
+     - JSON / MessagePack
+     - Hafif, hızlı ayrıştırma
+
+subword-nmt Kütüphanesi
+-----------------------------
+
+Karakter tabanlı BPE algoritmasını uygulayan çeşitli hazır kütüphaneler vardır. Bunlardan biri yöntemi
+ilk kez 2016 yılında ortaya atan Rico Sennrich, Barry Haddow ve Alexandra Birch tarafından geliştirilmiş
+olan ``subword-nmt`` kütüphanesidir. Aslında bu araştırmacılar kütüphaneyi *Neural Machine Translation
+of Rare Words with Subword Units* isimli makale eşliğinde kullanıma sunmuşlardır. Orijinal makaleye
+aşağıdaki bağlantıdan erişebilirsiniz:
+
+``https://arxiv.org/abs/1508.07909``
+
+Kütüphaneyi şöyle yükleyebilirsiniz:
+
+.. code-block:: bash
+
+   pip install subword-nmt
+
+Kütüphanenin kaynak kodlarına aşağıdaki GitHub deposundan erişebilirsiniz:
+
+``https://github.com/rsennrich/subword-nmt``
+
+
+subword-nmt Kütüphanesi — Komut Satırı ve Python API
+=======================================================
+
+subword-nmt Komut Satırı Arayüzü
+--------------------------------------
+
+``subword-nmt`` kütüphanesi kurulduğunda yalnızca kütüphane değil aynı zamanda komut satırından
+çalıştırılabilecek temel BPE işlemlerini yapan küçük programlar da yüklenmiş olmaktadır. Bu programlar
+aşağıdaki biçimde çalıştırılmaktadır:
+
+.. code-block:: bash
+
+   subword-nmt <komut> <seçenekler>
+
+Seçenekler ``--`` ile başlatılarak belirtilmektedir. Buradaki komutlar şunlardan biri olabilir:
+
+- ``learn-bpe``
+- ``apply-bpe``
+- ``get-vocab``
+
+learn-bpe Komutu
+-------------------
+
+``learn-bpe`` belli bir metinden hareketle eğitim işlemini yapmaktadır. Komut satırı seçenekleri
+şunlardır:
+
+.. code-block:: bash
+
+   subword-nmt learn-bpe --input corpus.txt --output codes.txt --symbols 10000 --min-frequency 2 --verbose
+
+``--input`` seçeneği eğitimde kullanılacak dosyayı belirtmektedir. ``--output`` seçeneği de eğitim
+sonucunda elde edilen atomların yazılacağı dosyayı belirtir. ``--symbols`` seçeneği en fazla kaç atom
+elde edildiğinde işlemin sonlandırılacağını belirtmektedir. Tabii işlemler birleştirilecek alt sözcükler
+kalmayınca da sonlandırılmaktadır. ``--min-frequency`` yan yana atomların en az kaç kere görüldüğünde
+birleştirileceğini belirtmektedir. ``--verbose`` parametresi ise işlemler yapılırken geri bildirim
+verilmesini sağlamaktadır. Örneğin:
+
+.. code-block:: bash
+
+   subword-nmt learn-bpe --input ..\data\turkish_news.txt --output codes.txt --symbols 10000 --min-frequency 2 --verbose
+
+Elde edilen çıktı dosyası (örneğimizde ``codes.txt`` dosyası) birleştirme kurallarından oluşan bir
+biçimdedir. Aşağıdaki gibi bir görünüme sahiptir:
+
+.. code-block:: text
+
+   #version: 0.2
+   a r
+   e r
+   a n
+   i l
+   i n
+   ı n
+   a l
+   d e
+   l a
+   y a
+   e n
+   d i
+   m a
+   i n</w>
+   d a</w>
+   o r
+   ...
+
+``subword-nmt`` programı Türkçeye özgü işlemler yapmamaktadır. Eğer metni Türkçeye göre sözcüklere
+ayırmak istiyorsanız önce bu işlemi yapıp Türkçe sözcükleri bir dosyaya yazmanız ve ``--input`` seçeneği
+ile bu dosyayı vermeniz uygun olur.
+
+apply-bpe Komutu
+------------------
+
+``subword-nmt`` programına ``apply-bpe`` komutu verilirse daha önce öğrenilmiş olan atomlar yeni
+metinlere uygulanarak yeni metnin atomlarına ayrıştırılması sağlanabilmektedir. Komut şöyle kullanılır:
+
+.. code-block:: bash
+
+   subword-nmt apply-bpe --codes codes.txt --input test.txt --output tokenized.txt \
+       --vocabulary vocab.txt --vocabulary-threshold 50
+
+Burada ``--codes`` seçeneği ``learn-bpe`` komutundan elde edilen dosyayı, ``--input`` seçeneği
+atomlarına ayrıştırılacak olan yazının bulunduğu dosyayı, ``--output`` seçeneği ise atomların yazılacağı
+dosyayı belirtmektedir. İsteğe bağlı olarak ``--vocabulary`` ile geçerli atomların listesinin bulunduğu
+dosya girilebilir. Bu durumda program yalnızca buradaki atomları dikkate almaktadır. ``--vocabulary-threshold``
+seçeneği ise sözcük hazinesindeki atom frekanslarının minimum değerini belirtmektedir. Bu parametre de
+isteğe bağlıdır. Örneğin:
+
+.. code-block:: bash
+
+   subword-nmt apply-bpe --codes codes.txt --input test.txt --output tokenized.txt --vocabulary vocab.txt
+
+Burada ``test.txt`` dosyasının içeriği şöyledir:
+
+.. code-block:: text
+
+   Bugün hava çok güzel! Kırlara gittik, ama sonra yağmur yağdı.
+
+Atomlarına ayırma sonucunda elde edilen ``tokenized.txt`` dosyasının içeriği de şöyledir:
+
+.. code-block:: text
+
+   Bugün hava çok güzel@@ ! Kır@@ lara gitti@@ k, ama sonra yağ@@ mur yağ@@ dı.
+
+Buradaki ``@@`` karakterleri *sözcük bitmiyor, sonra alt sözcükle birleştirilecek* anlamına gelmektedir.
+Bu sayede yeniden birleştirme işlemi (decode işlemi) etkin bir biçimde yapılabilmektedir.
+
+get-vocab Komutu
+------------------
+
+``get-vocab`` komutu sözcük hazinesini elde etmek amacıyla kullanılmaktadır. Kullanımı şöyledir:
+
+.. code-block:: bash
+
+   subword-nmt get-vocab --input tokenized.txt --output vocab.txt
+
+``--input`` seçeneği girdi dosyasını belirtmektedir. Bu girdi dosyası yukarıdaki ``apply-bpe`` işleminden
+elde edilen ``tokenized.txt`` dosyasıdır. Örneğin ``tokenized.txt`` dosyası aşağıdaki gibi olsun:
+
+.. code-block:: text
+
+   Bugün hava çok güzel@@ ! Kır@@ lara gitti@@ k, ama sonra yağ@@ mur yağ@@ dı.
+
+Biz de yukarıdaki komutu çalıştırmış olalım. Oluşturulan ``vocab.txt`` dosyasının içeriği şöyle
+olacaktır:
+
+.. code-block:: text
+
+   yağ@@ 2
+   Bugün 1
+   hava 1
+   çok 1
+   güzel@@ 1
+   ! 1
+   Kır@@ 1
+   lara 1
+   gitti@@ 1
+   k, 1
+   ama 1
+   sonra 1
+   mur 1
+   dı. 1
+
+Görüldüğü gibi birleştirme belirten ``@@`` karakterleri atılmamıştır. Yani bu karakterler de sözcük
+hazinesine dahil edilmiştir. Atomların yanlarında onların frekanslarının bulunduğuna dikkat ediniz.
+
+subword-nmt Python API'ı
+---------------------------
+
+Şimdi de ``subword-nmt`` kütüphanesinin kullanımını Python API'ı üzerinden gözden geçirelim. Kütüphane
+kurulduktan sonra kütüphane içerisindeki modüller şöyle import edilebilir:
+
+.. code-block:: python
+
+   from subword_nmt.learn_bpe import learn_bpe
+   from subword_nmt.apply_bpe import BPE
+   from subword_nmt.get_vocab import get_vocab
+
+Birinci satırda ``subword_nmt`` paketinin (yani dizininin) içerisindeki ``learn_bpe.py`` dosyasının
+içerisinde bulunan ``learn_bpe`` fonksiyonu import edilmiştir. İkinci satırda da aynı dizindeki
+``apply_bpe.py`` dosyası içerisindeki ``BPE`` sınıfı import edilmiştir. Üçüncü satırda da aynı dizindeki
+``get_vocab.py`` dosyası içerisinde bulunan ``get_vocab`` fonksiyonunun import edildiğini görüyorsunuz.
+
+Buradaki fonksiyonlar ve sınıflar girdileri ve çıktıları dosya nesnesi olarak istemektedir. Yani tipik
+olarak bizim önce ``open`` ile var olan bir dosyayı açmamız ya da olmayan bir dosyayı yaratıp açmamız,
+sonra bu API arayüzüne açılmış dosya nesnelerini vermemiz ya da yazıları ``io.StringIO`` nesnesi haline
+getirip vermemiz gerekir.
+
+learn_bpe Fonksiyonu
+------------------------
+
+``learn_bpe`` fonksiyonunun parametrik yapısı şöyledir:
+
+.. code-block:: python
+
+   learn_bpe(
+       infile,           # Okunacak corpus (dosya nesnesi)
+       outfile,          # Kuralların yazılacağı yer (dosya nesnesi)
+       num_symbols,      # Öğrenilecek birleştirme kuralı sayısı
+       min_frequency=2,  # Minimum çift frekansı
+       verbose=False,    # Adımları yazdır
+       is_dict=False,    # Input kelime frekans sözlüğü mü?
+       total_symbols=False
+   )
+
+Biz zaten ``learn-bpe`` komut satırı arayüzünde bu parametrelerin ne anlam ifade ettiğini görmüştük.
+Buradaki ``is_dict`` parametresi ``True`` yapılırsa girdi dosyasının sözcük ve frekanslardan oluşan bir
+formatta olması gerekir. Örneğin:
+
+.. code-block:: text
+
+   Bugün 3
+   hava 1
+   çok 2
+   güzel 1
+   sıcak 1
+
+Fonksiyonun ``total_symbols`` parametresi toplamda kaç tane birleştirme kuralının öğrenileceğini
+belirtmektedir. Eğer bu parametre ``False`` geçilirse bu konuda bir sınırlama yapılmamaktadır.
+
+Örneğin:
+
+.. code-block:: python
+
+   from subword_nmt.learn_bpe import learn_bpe
+
+   with open('../Data/turkish_news.txt') as fin, open('codes.txt', 'w') as fout:
+       bpe = learn_bpe(fin, fout, 10000)
+
+Fonksiyon işlemini bitirdikten sonra ``codes.txt`` isimli birleştirme bilgilerinin bulunduğu dosya
+oluşmuş olacaktır.
+
+get_vocab Fonksiyonu
+------------------------
+
+``get_vocab`` fonksiyonu da komut satırındaki ``get-vocab`` işlemini yapmaktadır. Fonksiyonun parametrik
+yapısı şöyledir:
+
+.. code-block:: python
+
+   def get_vocab(train_file, vocab_file):
+
+Fonksiyonun birinci parametresi eğitilmiş bilgilerin bulunduğu dosyayı, ikinci parametresi ise sözcük
+hazinesinin oluşturulacağı dosyayı belirtmektedir. Örneğin:
+
+.. code-block:: python
+
+   from subword_nmt.learn_bpe import learn_bpe
+   from subword_nmt.apply_bpe import BPE
+   from subword_nmt.get_vocab import get_vocab
+
+   with open('../Data/turkish_news.txt') as fin, open('codes.txt', 'w') as fout:
+       bpe = learn_bpe(fin, fout, 10000)
+
+   with open('codes.txt') as tf, open('vocab.txt', 'w') as vf:
+       get_vocab(tf, vf)
+
+
+subword-nmt BPE Sınıfı ve Hugging Face Tokenizers'a Giriş
+============================================================
+
+BPE Sınıfı ile Atomlarına Ayırma
+-------------------------------------
+
+``subword-nmt`` kütüphanesinin diğer bir öğesi de eğitim bittikten sonra metni atomlarına ayrıştırmakta
+kullanılan ``BPE`` sınıfıdır. ``BPE`` sınıfının ``__init__`` metodunun parametrik yapısı şöyledir:
+
+.. code-block:: python
+
+   BPE(
+       codes,                     # Codes dosyası (dosya nesnesi)
+       merges=-1,                 # Kaç kural uygulanacak (-1 = tümü)
+       separator='@@',            # Alt-sözcük birleşim sembolü
+       vocab=None,                # Geçerli token listesi (opsiyonel)
+       glossaries=None,           # Hiç parçalanmaması gereken kelimeler
+       dropout=0.0                # BPE dropout oranı (0.0 = kapalı)
+   )
+
+``codes`` parametresi eğitim sonucunda elde edilen alt sözcük ve frekanslardan oluşan dosyayı
+belirtmektedir. ``merges`` parametresi toplamda kaç kuralın uygulanacağını belirtmektedir. Default
+durumda tüm kurallar uygulanmaktadır. Alt sözcüklerin sonraki alt sözcükle birleştirileceğini anlatan
+``@@`` meta karakterleri istenirse ``separator`` parametresiyle değiştirilebilmektedir. Uygulamacı bazı
+sözcüklerin alt sözcüklere ayrılmasını istemeyebilir. ``glossaries`` parametresi alt sözcüklere
+ayrıştırılmayacak sözcük listesini belirtmektedir. ``dropout`` birleştirme kurallarından belirli bir
+oranda rastgele atılmasını sağlamaktadır. BPE işleminde dropout alt sözcük düzenlemesi (subword
+regularization) için bazı uygulamalarda iyileştirme sağlayabilmektedir. Aynı sözcük eğitim sırasında her
+seferinde farklı biçimlerde atomlarına ayrıldığı için model *tek bir atomlaştırmaya aşırı bağımlı hale
+gelmemekte, atom sınırlarına karşı daha dayanıklı (robust) hale gelmekte* ve özellikle seyrek sözcükler
+için modelin genelleme kapasitesi artabilmektedir. Tıpkı yapay sinir ağlarında olduğu gibi dropout işlemi
+yalnızca eğitim sırasında uygulanması gereken bir işlemdir. Çıkarım ya da test işlemlerinde dropout
+uygulanmamalıdır. BPE dropout işleminin her uygulama alanında faydalı olmayabileceğine, bilakis zararlı
+etkilere yol açabileceğine dikkatinizi çekmek istiyoruz.
+
+Atomlarına ayırma işlemi ``BPE`` sınıfının ``process_line`` metoduyla yapılmaktadır:
+
+.. code-block:: python
+
+   def process_line(self, line, dropout=0)
+
+Metodun ``self`` dışındaki birinci parametresi (``line``) atomlarına ayrıştırılacak yazıyı
+belirtmektedir. Her ne kadar bu metodun ismi ``process_line`` olsa da metot içerisinde bir satır
+kontrolü uygulanmamıştır. Dolayısıyla metoda bir satırın verilmesi gibi zorunluluk yoktur. Metot daha
+çok dosyadan satır satır okuma yapıldığında her satırın işleme sokulması gerektiği durumlar için
+tasarlanmıştır. Örneğin:
+
+.. code-block:: python
+
+   with open('../Data/turkish_news.txt') as fin, open('codes.txt', 'w') as fout:
+       bpe = learn_bpe(fin, fout, 10000)
+
+   with open('codes.txt') as fcode:
+       bpe = BPE(fcode)
+
+   tokenized_text = bpe.process_line("Bugünlerde havalar güzelleşti")
+   print(tokenized_text)
+
+``subword-nmt`` kütüphanesinde atomlarına ayrıştırılmış metni birleştiren bir fonksiyon ya da metot
+bulundurulmamıştır. Çünkü bu işlem zaten Python'da string üzerinde ``replace`` uygulanarak
+yapılabilir. Örneğin:
+
+.. code-block:: python
+
+   decoded_text = tokenized_text.replace('@@ ', '')
+   print(decoded_text)
+
+Hugging Face Platformuna Giriş
+------------------------------------
+
+Şimdi de BPE yöntemiyle alt sözcük atomlarına ayırma işleminin Hugging Face kütüphanesi ile nasıl
+yapıldığı üzerinde duralım. Biz şimdiye kadar Hugging Face kütüphanesi hakkında bir açıklamada
+bulunmadık. Burada aynı zamanda bu kütüphaneye de bir giriş yapmış olacağız.
+
+Hugging Face Tarihçesi ve Ekosistemi
+-----------------------------------------
+
+Hugging Face, 2016 yılında Clément Delangue, Julien Chaumond ve Thomas Wolf tarafından New York'ta
+kuruldu. Başlangıçta kurucular eğlencili bir chatbot uygulaması üzerinde çalışıyordu. Daha sonra
+kurucular Google'ın BERT modelini duyurmasıyla birlikte bu modeli PyTorch üzerinde gerçekleştiren bir
+kütüphane oluşturdular ve böyle ilgiyi üzerlerine çektiler. Zaman içerisinde 2018 yılından itibaren
+Hugging Face modern transformer tabanlı bir NLP ortamı haline gelmeye başladı. Daha sonra 2019 yılında
+Hugging Face kişilerin modellerini paylaşabildiği bir *hub* oluşturdu. Hub oluşturmanın temel amaçları
+şunlardı:
+
+- Araştırmacılar eğittikleri modelleri paylaşabilsin.
+- Geliştiriciler bu modelleri tek satırla indirip kullanabilsin.
+- Topluluk, modeller üzerine tartışabilsin ve katkıda bulunabilsin.
+
+2020 sonunda Hub'da birkaç yüz model bulunuyordu. Ancak bu sayı ilerleyen yıllarda astronomik biçimde
+arttı. 2021 yılından itibaren Hugging Face kütüphaneleri çeşitlendi ve bir ekosistem haline geldi:
+
+.. list-table:: Hugging Face Ekosistemi
+   :header-rows: 1
+   :widths: 18 18 18
+
+   * - transformers (modeller)
+     - datasets (veri setleri)
+     - tokenizers (atomlaştırıcı)
+   * - accelerate (dağıtık eğitim)
+     - evaluate (değerlendirme)
+     - peft (ince ayar)
+
+Aşağıda Hugging Face'in kronolojik gelişimini özetliyoruz:
+
+.. list-table:: Hugging Face Kronolojik Gelişim
+   :header-rows: 1
+   :widths: 12 50
+
+   * - Yıl
+     - Gelişme
+   * - 2016
+     - Chatbot uygulaması olarak kuruldu
+   * - 2018
+     - BERT'i PyTorch'a taşıma; ``transformers`` kütüphanesi yayımlandı
+   * - 2019
+     - Model paylaşım Hub'ı oluşturuldu
+   * - 2021
+     - Ekosistem genişlemesi başladı
+   * - 2023
+     - Açık LLM merkezi oldu
+   * - 2025
+     - Hub'da 1M+ model
+
+Bugün Hugging Face yalnızca bir kütüphane ekosistemi değil aynı zamanda bir LLM merkezi ya da portalı
+durumundadır.
+
+Hugging Face'in adı ve markası, Unicode emoji standardındaki *smiling face with open hands* emojisinden
+geliyor. Bu emoji, Unicode'da U+1F917 kod noktasına karşılık gelir ve resmi adı *Hugging Face*'dir —
+yani şirket adını emojiden almıştır, emoji şirketten almamıştır. Bu karakteri Python'da şöyle ekrana
+bastırabilirsiniz:
+
+.. code-block:: python
+
+   print('\U0001F917')
+
+ya da şöyle yazdırabilirsiniz:
+
+.. code-block:: python
+
+   print(chr(0x1F917))
+
+Hugging Face eskiden bir uygulama, sonra bir kütüphane, sonra bir paylaşım yeri haline geldi. Biz de
+kursumuzda Hugging Face'in kullanım amacına göre ona bazen *kütüphane* bazen de *platform* diyeceğiz.
+
+Hugging Face platformuna aşağıdaki bağlantıdan erişebilirsiniz:
+
+``https://huggingface.co/``
+
+Hugging Face kütüphanelerinin çeşitli bölümlerinde Python'un yanı sıra C/C++, Rust gibi diller de
+kullanılmıştır. Kütüphanelerdeki sinir ağları işlemleri için ağırlıklı olarak PyTorch framework'ünden
+faydalanılmıştır. Ancak bazı yerlerde TensorFlow ve Keras da kullanılmıştır. Aşağıdaki tabloda
+kütüphanenin hangi bileşenlerinde hangi dil ve framework'lerin kullanıldığını özetliyoruz:
+
+.. list-table:: Hugging Face Bileşenlerinde Kullanılan Dil ve Framework'ler
+   :header-rows: 1
+   :widths: 18 45
+
+   * - Kütüphane
+     - Kullanılan Dil / Framework
+   * - ``transformers``
+     - Python · PyTorch · TensorFlow · JAX/Flax
+   * - ``tokenizers``
+     - Rust · Python (PyO3 köprüsü)
+   * - ``datasets``
+     - Python · Rust · Apache Arrow
+   * - ``accelerate``
+     - Python · PyTorch · CUDA C
+   * - ``diffusers``
+     - Python · PyTorch · JAX/Flax
+   * - ``peft``
+     - Python · PyTorch
+   * - ``trl``
+     - Python · PyTorch
+   * - ``transformers.js``
+     - JavaScript · TypeScript · ONNX Runtime
+   * - ``safetensors``
+     - Rust · Python (PyO3) · JavaScript
+   * - ``smolagents``
+     - Python · PyTorch
+
+Hugging Face kütüphaneleri yukarıda da belirttiğimiz gibi çeşitli bölümlere ayrılmaktadır. Bunların
+kurulumları da ayrı ayrı yapılmaktadır. Biz en azından aşağıdaki üç paketi kurmanızı tavsiye ediyoruz:
+
+.. code-block:: bash
+
+   pip install tokenizers transformers datasets
+
+Biz bu bölümde Hugging Face kütüphanesinin ``tokenizers`` bölümü üzerinde duracağız ve BPE atomlarına
+ayırma işleminin Hugging Face ile nasıl yapıldığını göreceğiz.
+
+Hugging Face BPE Atomlarına Ayırma Pipeline'ı
+---------------------------------------------------
+
+Hugging Face ile BPE gibi atomlarına ayırma işlemi tipik olarak aşağıdaki adımlardan geçilerek
+gerçekleştirilmektedir:
+
+.. code-block:: text
+
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │          Hugging Face Tokenizers — BPE Atomlarına Ayırma            │
+    └─────────────────────────────────────────────────────────────────────┘
+
+                                 Ham Metin
+                                    │
+                                    ▼
+                ┌───────────────────────────────────────────┐
+                │      1. Tokenizer Nesnesi Oluşturma       │
+                │                                           │
+                │          tokenizer = Tokenizer(BPE())     │
+                └───────────────────────────────────────────┘
+                                    │
+                    ┌───────────────┴───────────────┐
+                    ▼                               ▼
+        ┌────────────────────────┐   ┌─────────────────────────────┐
+        │      Normalizer        │   │        PreTokenizer         │
+        │                        │   │                             │
+        │ tokenizer.normalizer   │   │  tokenizer.pre_tokenizer    │
+        │ Unicode NFC, küçük     │   │  Whitespace, ByteLevel,     │
+        │ harf, aksan silme      │   │  Punct vb.                  │
+        └────────────────────────┘   └─────────────────────────────┘
+                    │                               │
+                    └───────────────┬───────────────┘
+                                    │
+                                    ▼
+                ┌───────────────────────────────────────────┐
+                │     2. Trainer Nesnesi & Model Eğitimi    │
+                │                                           │
+                │  trainer = BpeTrainer(                    │
+                │      vocab_size      = 30000,             │
+                │      min_frequency   = 2,                 │
+                │      special_tokens  = ["[UNK]","[CLS]",  │
+                │                         "[SEP]","[PAD]",  │
+                │                         "[MASK]"]         │
+                │  )                                        │
+                │                                           │
+                │  tokenizer.train(files, trainer)          │
+                └───────────────────┬───────────────────────┘
+                                    │
+                          ┌─────────┴──────────┐
+                          │  tokenizer.save()  │  ← isteğe bağlı
+                          │  Tokenizer         │
+                          │    .from_file()    │
+                          └─────────┬──────────┘
+                                    │
+                ════════════════════════════════════════════
+                    3. BPE Atomlarına Ayırma Pipeline'ı
+                            (encode aşaması)
+                ════════════════════════════════════════════
+                                    │
+                                    ▼
+                ┌───────────────────────────────────────────┐
+                │               Normalizer                  │
+                │  Unicode NFC, küçük harf, aksan silme     │
+                └───────────────────────────────────────────┘
+                                    │
+                                    ▼
+                ┌───────────────────────────────────────────┐
+                │               PreTokenizer                │
+                │  Metni sözcük benzeri parçalara böler     │
+                │  (boşluk, regex, ByteLevel vb.)           │
+                └───────────────────────────────────────────┘
+                                    │
+                                    ▼
+                ┌───────────────────────────────────────────┐
+                │               Model (BPE)                 │
+                │  Öğrenilen birleştirme kuralları uygulanır│
+                │  → Alt-sözcük atomları üretilir           │
+                └───────────────────────────────────────────┘
+                                    │
+                                    ▼
+                ┌───────────────────────────────────────────┐
+                │               PostProcessor               │
+                │  [CLS], [SEP] gibi özel atomlar eklenir   │
+                └───────────────────────────────────────────┘
+                                    │
+                                    ▼
+                ┌───────────────────────────────────────────┐
+                │                 Decoder                   │
+                │  Atom listesini tekrar metne dönüştürür   │
+                └───────────────────────────────────────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │   Atom ID Listesi   │
+                         │     (Encoding)      │
+                         └─────────────────────┘
+
+
+Hugging Face Tokenizers — Normalizer Sınıfları
+--------------------------------------------------
+
+Hugging Face'in ``tokenizers`` kütüphanesinde metin normalizasyonu yapan sınıflar da bulunmaktadır.
+Uygulamacı metin normalizasyonunu bu sınıflara yaptırabilir. Ancak maalesef buradaki normalizasyon
+sınıflarının çoğu Türkçe için uygun değildir. Bu nedenle Türkçe uygulamalarda metin normalizasyonunu
+kursun başında oluşturduğumuz kütüphane ile yapmanızı salık veririz. Aşağıdaki tabloda normalizer
+sınıflarının Türkçe için uygunluğu değerlendirilmiştir:
+
+.. list-table:: Hugging Face Normalizer Sınıflarının Türkçe Uyumu
+   :header-rows: 1
+   :widths: 18 12 45
+
+   * - Normalizer
+     - Türkçe Uyumu
+     - Açıklama
+   * - ``NFD``
+     - Kullanılır
+     - Unicode ayrıştırma (ğ → g + combining)
+   * - ``NFC``
+     - Kullanılır
+     - Unicode birleştirme (önerilen)
+   * - ``NFKD``
+     - Dikkatli
+     - Uyumluluk ayrıştırma, bazı kayıplar
+   * - ``NFKC``
+     - Kullanılır
+     - Uyumluluk birleştirme (genellikle güvenli)
+   * - ``Lowercase``
+     - Dikkatli
+     - İ→i sorunu! (Türkçe i/İ ayrımı bozulur)
+   * - ``Strip``
+     - Kullanılır
+     - Baştaki/sondaki boşlukları siler
+   * - ``StripAccents``
+     - Zararlı
+     - ş, ğ, ü, ö, ç, ı gibi harfleri bozar!
+   * - ``Replace``
+     - Kullanılır
+     - Regex ile özel değişim, esnek
+   * - ``BertNormalizer``
+     - Zararlı
+     - ``strip_accents=True`` ise Türkçe'yi bozar
+   * - ``Sequence``
+     - Kullanılır
+     - Birden fazla normalizer'ı zincirler
+   * - ``Prepend``
+     - Kullanılır
+     - Başa karakter ekler
+   * - ``ByteLevel``
+     - Kullanılır
+     - Byte seviyesi, dil-bağımsız
+
+Hugging Face'in normalizer sınıfları ayrı dosyalara yazılmıştır. Bunlar ``tokenizers.normalizers``
+paketi içerisindedir. Örneğin NFC normalizasyonu yapan sınıfı kullanacaksanız aşağıdaki gibi ``from
+import`` işlemi yapabilirsiniz:
+
+.. code-block:: python
+
+   from tokenizers.normalizers import NFC
+
+Bütün normalizasyon sınıfları ``Normalizer`` isimli sınıftan türetilmiştir. Bu ``Normalizer`` sınıfı
+soyut sınıf görevindedir. Programcı kendi normalizasyon sınıfını yazmak istiyorsa sınıfını bu
+``Normalizer`` sınıfından türetip sınıfında ``normalize`` metodunu yazması gerekir. ``Normalizer``
+sınıfları aynı isimli metotlara sahip olduğu için bunlardan boru hattı oluşturulabilmektedir.
+
+``tokenizers.normalizers.Normalizer`` sınıf hiyerarşisi şöyledir:
+
+.. code-block:: text
+
+   tokenizers.normalizers.Normalizer   (abstract base class)
+   │
+   ├── NFC
+   ├── NFD
+   ├── NFKC
+   ├── NFKD
+   ├── Lowercase
+   ├── Strip
+   ├── StripAccents
+   ├── Replace
+   ├── Prepend
+   ├── ByteLevel
+   ├── BertNormalizer
+   ├── Nmt
+   └── Sequence
+
+Taban ``Normalizer`` sınıfında normalizasyon işlemini yapan ``normalize_str`` isimli bir metot
+bulunmaktadır. Bu metot da aslında normalizasyon işlemi için ``normalize`` metodunu çağırmaktadır. İşte
+türemiş sınıfların hepsi bu ``normalize`` metodunu tanımlamış durumdadır. (Yani dil işleyenler bu
+``Normalizer`` sınıfını soyut sınıf olarak, ``normalize`` metodunu da *sanal* yani *çok biçimli* bir
+metot olarak düşünebilirler.) ``normalize_str`` metodu bizden normalize edilecek yazıyı alır ve normalize
+edilmiş yazıyla geri döner. Örneğin:
+
+.. code-block:: python
+
+   from tokenizers.normalizers import Lowercase
+
+   lc = Lowercase()
+   normalized_text = lc.normalize_str('AĞRI DAĞI ÇOK YÜKSEK')
+   print(normalized_text)       # ağri daği çok yüksek
+
+Normalizer sınıflarının dokümantasyonuna aşağıdaki bağlantıdan erişebilirsiniz:
+
+``https://huggingface.co/docs/tokenizers/api/normalizers?code=python#tokenizers.normalizers``
+
+Aşağıda hangi sınıfın hangi normalizasyonları yaptığı bir tablo halinde verilmiştir:
+
+.. list-table:: Hugging Face Normalizer Sınıflarının Açıklamaları
+   :header-rows: 1
+   :widths: 14 55
+
+   * - Normalizer
+     - Açıklama
+   * - ``NFC``
+     - Unicode karakterleri *birleşik* forma getirir. Örneğin ayrı kod noktaları olarak saklanan
+       "e + ̈" tek bir "ë" karakterine dönüştürülür. Türkçe için önerilen Unicode normalizasyon
+       biçimidir.
+   * - ``NFD``
+     - Unicode karakterleri *ayrıştırılmış* forma getirir. Tek "ë" karakterini "e" tabanı ve
+       birleştirici nokta işaretine ayırır. ``StripAccents`` ile birlikte kullanılarak aksanlı
+       harfleri temizlemek için sıkça tercih edilir.
+   * - ``NFKC``
+     - NFKD'nin ardından NFC uygular; uyumluluk karakterlerini kanonik karşılıklarına dönüştürüp
+       birleşik forma getirir. "①" → "1", "ﬁ" → "fi" gibi tipografik varyantları standartlaştırır.
+       Genellikle Türkçe için güvenlidir.
+   * - ``NFKD``
+     - Uyumluluk ayrıştırmasını uygular; hem kanonik hem de uyumluluk eşdeğerliklerini ayrıştırır.
+       Ligature ve özel sembol varyantlarını bileşenlerine ayırır. Türkçe karakterleri de
+       etkileyebileceğinden dikkat gerektirir.
+   * - ``Lowercase``
+     - Metindeki tüm büyük harfleri küçüğe çevirir. Rust/Python standart lowercase kullandığından
+       Türkçe'de "İ → i̇" (yanlış) sonucu üretir; doğrusu "İ → i" ve "I → ı" olmalıdır. Türkçe
+       için dikkatli kullanılmalıdır.
+   * - ``Strip``
+     - Metnin başındaki ve/veya sonundaki boşluk karakterlerini siler. ``left``, ``right`` veya
+       ``both`` parametreleriyle hangi tarafın temizleneceği belirlenebilir. Dil bağımsız olarak
+       güvenle kullanılabilir.
+   * - ``StripAccents``
+     - Birleştirici aksan işaretlerini (combining diacritics) metinden kaldırır. Genellikle NFD ile
+       birlikte kullanılır. "é → e" dönüşümü yapar. Türkçe için kesinlikle kullanılmamalıdır; ş, ğ,
+       ü, ö, ç, ı harflerini bozar.
+   * - ``Replace``
+     - Belirtilen bir karakter veya regex kalıbını başka bir değerle değiştirir. Türkçe büyük/küçük
+       harf dönüşümü (İ→i, I→ı) gibi dil özelinde normalizasyon kurallarını uygulamak için en esnek
+       seçenektir.
+   * - ``Prepend``
+     - Her metnin başına sabit bir karakter veya önek ekler. Bazı SentencePiece modellerinde
+       sözcüklerin başına "▁" (alt çizgi) eklenmesi gibi atom sınırlarını işaretlemek amacıyla
+       kullanılır.
+   * - ``ByteLevel``
+     - Metni doğrudan UTF-8 byte'larına karşılık gelen 256 karakterlik bir alfabe ile temsil eder.
+       GPT-2 mimarisinde kullanılan bu yöntem dil bağımsızdır; bilinmeyen karakter (UNK) sorunu
+       ortaya çıkmaz.
+   * - ``BertNormalizer``
+     - BERT modelinin orijinal ön işleme adımlarını uygular: Unicode temizliği, Çince karakter
+       etrafına boşluk ekleme, aksanları kaldırma ve küçük harfe çevirme. ``strip_accents=True`` ve
+       ``lowercase=True`` varsayılan ayarları Türkçe metinleri bozar; her iki parametre ``False``
+       yapılmalıdır.
+   * - ``Nmt``
+     - Google'ın Sinir Ağı Makine Çevirisi (NMT) sisteminde kullanılan normalizasyon kurallarını
+       uygular. Kontrol karakterlerini, tekrarlayan boşlukları ve bazı özel Unicode sembollerini
+       temizler. Türkçe karakterlere dokunmadığından güvenle kullanılabilir.
+   * - ``Sequence``
+     - Birden fazla normalizer'ı sıralı biçimde zincirler; her normalizer bir öncekinin çıktısı
+       üzerinde çalışır. Türkçe için ``Sequence([NFC(), Replace('İ','i'), Replace('I','ı')])``
+       gibi özelleştirilmiş boru hattı oluşturmaya olanak tanır.
+
+Burada ``BertNormalizer`` ve ``Nmt`` sınıfları hakkında özel bir açıklama yapmak istiyoruz.
+``BertNormalizer`` sınıfı orijinal BERT modelinde kullanılan normalizasyon işlemlerini uygulamaktadır.
+Benzer biçimde ``Nmt`` sınıfı da Google'ın NMT (Neural Machine Translation) modelinin uyguladığı
+normalizasyonları uygulamaktadır.
+
+``Sequence`` sınıfı boru hattı mekanizmasını oluşturmaktadır. Bu sınıfa bir liste biçiminde normalizer
+nesneleri verilir. Sonra ``normalize_str`` metodu çağrılır. Bu metot da tüm normalizer'lara sırasıyla
+boru hattı oluşturacak biçimde ``normalize_str`` metotlarını uygular. Örneğin:
+
+.. code-block:: python
+
+   from tokenizers.normalizers import Lowercase, NFC, Replace, Sequence
+   from tokenizers import Regex
+
+   nfc = NFC()
+   normalized_text = nfc.normalize_str('e\u0301')
+   print(normalized_text)       # é  (e + birleştirici aksan → tek karakter é)
+
+   lc = Lowercase()
+   normalized_text = lc.normalize_str('AĞRI DAĞI ÇOK YÜKSEK')
+   print(normalized_text)       # ağri daği çok yüksek
+
+   replace = Replace(Regex(r'\s+'), ' ')
+   normalized_text = replace.normalize_str('bugün         hava     çok    güzel')
+   print(normalized_text)
+
+   sequence = Sequence([nfc, lc, replace])
+   normalized_text = sequence.normalize_str('This    is a    TEST')
+   print(normalized_text)
+
+.. note::
+
+   Orijinal ders notunda ``NFC`` örneğinin çıktı yorumu ``# ağri daği çok yüksek`` olarak
+   verilmişti. Bu, ``Lowercase`` örneğinden kopyalanmış bir yazım hatasıdır. ``NFC`` normalizasyonu
+   ``'e\u0301'`` (e + birleştirici aksan) yazısını tek bir ``'é'`` karakterine dönüştürür; çıktı
+   yorum satırı yukarıda düzeltilmiştir.
+
+Burada ``Lowercase`` ve ``Replace`` normalizasyon sınıflarının ve ``Sequence`` boru hattı mekanizmasının
+tipik kullanımını görüyorsunuz.
+
+Özel Normalizer Sınıfı Yazma
+----------------------------------
+
+Uygulamacı isterse kendi normalizer sınıfını da yazabilir. Bunun için bir sınıf tanımlar ve sınıfı için
+``normalize`` metodunu yazar. ``normalize`` metodunun parametrik yapısı şöyledir:
+
+.. code-block:: python
+
+   def normalize(self, normalized: NormalizedString) -> None
+
+Metot ``normalize_str`` tarafından ``NormalizedString`` türünden bir nesneyle çağrılmaktadır. Yani metot
+aslında şöyle çağrılmaktadır:
+
+.. code-block:: python
+
+   def normalize_str(self, sequence):
+       ns = NormalizedString(sequence)
+       self.normalize(ns)
+       return str(ns)
+
+Programcının bu nesne üzerinde (yani in-place bir biçimde) normalizasyon yapması gerekmektedir. Ancak
+bir noktaya dikkatinizi çekmek istiyoruz. Güncel ``tokenizers`` kütüphanesi Rust'ta yazılmıştır.
+``Normalizer`` da Rust'ta bir trait biçiminde tanımlanmıştır. Rust'taki trait'ler Python'da taban sınıf
+olarak kullanılamamaktadır. Bu nedenle maalesef özel normalizer sınıfı ``Normalizer`` sınıfından türetme
+yapılmadan yazıldığında bu sınıf türünden nesne Hugging Face'in ``tokenizers`` modülü tarafından
+kullanılamamaktadır. Fakat biz yine de izleyen paragrafta normalizer sınıflarının çalışma biçimlerinin
+anlaşılması için — her ne kadar kullanamayacak olsak da — özel bir normalizer sınıfı örneği vereceğiz.
+
 
