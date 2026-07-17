@@ -39,3 +39,4 @@ documentation for details.
    classicalnaturallanguageprocessing
    textnormalization
    tokenization
+   tokennormalization
