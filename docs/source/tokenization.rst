@@ -6296,12 +6296,12 @@ yapılabilir:
     from tokenizers import NormalizedString
     import normalizer
 
-    tr_nomalizer = normalizer.build_spacy_turkish_normalizer()
+    tr_normalizer = normalizer.build_spacy_turkish_normalizer()
 
     class HuggingFaceTurkishNormalizer:
         def normalize(self, normalized):
             text = str(normalized)
-            normalized_text = tr_nomalizer(text)
+            normalized_text = tr_normalizer(text)
             normalized.replace(text, normalized_text)
 
     htr_norm = HuggingFaceTurkishNormalizer()
@@ -6820,11 +6820,11 @@ edip elde ettiğimiz string ile train_from_iterator metodunu kullanmak. İkinci 
 
 .. code-block:: python
 
-    tr_nomalizer = normalizer.build_turkish_normalizer()
+    tr_normalizer = normalizer.build_turkish_normalizer()
 
     with open('../Data/turkish_news.txt') as f:
         text = f.read()
-        normalized_text = tr_nomalizer(text)
+        normalized_text = tr_normalizer(text)
 
     tokenizer.train_from_iterator([normalized_text], trainer)
 
@@ -6838,7 +6838,7 @@ açabilmektedir. Bu durumu üretici fonksiyonlarla bertaraf edebiliriz. Örneği
     def text_from_file_generator(path):
         with open(path, encoding='utf-8') as f:
             for line in f:
-                normalized_line = tr_nomalizer(line)
+                normalized_line = tr_normalizer(line)
                 yield normalized_line
 
     tokenizer.train_from_iterator(text_from_file_generator('../Data/turkish_news.txt'), trainer, 174519)
@@ -6859,7 +6859,7 @@ Aşağıda kendi normalizer modülümüzü de kullandığımız örneği bir bü
     from tokenizers.trainers import BpeTrainer
     import normalizer
 
-    tr_nomalizer = normalizer.build_turkish_normalizer()
+    tr_normalizer = normalizer.build_turkish_normalizer()
 
     tokenizer = Tokenizer(BPE(unk_token='[UNK]'))
     tokenizer.pre_tokenizer = Whitespace()
@@ -6870,7 +6870,7 @@ Aşağıda kendi normalizer modülümüzü de kullandığımız örneği bir bü
     def text_from_file_generator(path):
         with open(path, encoding='utf-8') as f:
             for line in f:
-                normalized_line = tr_nomalizer(line)
+                normalized_line = tr_normalizer(line)
                 yield normalized_line
 
     tokenizer.train_from_iterator(text_from_file_generator('../Data/turkish_news.txt'), trainer, 174519
@@ -7197,7 +7197,7 @@ bütün olarak verilmiştir.
     from tokenizers.trainers import BpeTrainer
     import normalizer
 
-    tr_nomalizer = normalizer.build_turkish_normalizer()
+    tr_normalizer = normalizer.build_turkish_normalizer()
 
     tokenizer = Tokenizer(BPE(unk_token='[UNK]'))
     tokenizer.pre_tokenizer = Whitespace()
@@ -7209,7 +7209,7 @@ bütün olarak verilmiştir.
     def text_from_file_generator(path):
         with open(path, encoding='utf-8') as f:
             for line in f:
-                normalized_line = tr_nomalizer(line)
+                normalized_line = tr_normalizer(line)
                 yield normalized_line
 
     tokenizer.train_from_iterator(text_from_file_generator('../Data/turkish_news.txt'), trainer, 174519)
@@ -7798,7 +7798,7 @@ edemeyiz. Şimdi bir örnek yapalım:
     from tokenizers.trainers import BpeTrainer
     import normalizer
 
-    tr_nomalizer = normalizer.build_turkish_normalizer()
+    tr_normalizer = normalizer.build_turkish_normalizer()
 
     tokenizer = Tokenizer(BPE())
     tokenizer.pre_tokenizer = pre_tokenizers.ByteLevel()
@@ -7818,7 +7818,7 @@ Dosyayı açıp satırları kendi normalizasyon boru hattımıza sokan fonksiyon
     def text_from_file_generator(path):
         with open(path, encoding='utf-8') as f:
             for line in f:
-                normalized_line = tr_nomalizer(line)
+                normalized_line = tr_normalizer(line)
                 yield normalized_line
 
 train işleminde de bir değişikliğin yapılmasına gerek yoktur:
@@ -7893,7 +7893,7 @@ Aşağıda örnek bir bütün olarak verilmiştir.
     from tokenizers.trainers import BpeTrainer
     import normalizer
 
-    tr_nomalizer = normalizer.build_turkish_normalizer()
+    tr_normalizer = normalizer.build_turkish_normalizer()
 
     tokenizer = Tokenizer(BPE())
     tokenizer.pre_tokenizer = Whitespace()
@@ -7905,7 +7905,7 @@ Aşağıda örnek bir bütün olarak verilmiştir.
     def text_from_file_generator(path):
         with open(path, encoding='utf-8') as f:
             for line in f:
-                normalized_line = tr_nomalizer(line)
+                normalized_line = tr_normalizer(line)
                 yield normalized_line
 
     tokenizer.train_from_iterator(text_from_file_generator('../Data/turkish_news.txt'), trainer, 174519)
@@ -7961,7 +7961,7 @@ da train_from_iterator metodu bulunmaktadır:
     def text_from_file_generator(path):
         with open(path, encoding='utf-8') as f:
             for line in f:
-                normalized_line = tr_nomalizer(line)
+                normalized_line = tr_normalizer(line)
                 yield normalized_line
 
     tokenizer.train_from_iterator(text_from_file_generator('../Data/turkish_news.txt'), length=174519)
@@ -7984,14 +7984,14 @@ Aşağıda örnek bir bütün olarak verilmiştir.
     import normalizer
     from tokenizers import ByteLevelBPETokenizer
 
-    tr_nomalizer = normalizer.build_turkish_normalizer()
+    tr_normalizer = normalizer.build_turkish_normalizer()
 
     tokenizer = ByteLevelBPETokenizer()
 
     def text_from_file_generator(path):
         with open(path, encoding='utf-8') as f:
             for line in f:
-                normalized_line = tr_nomalizer(line)
+                normalized_line = tr_normalizer(line)
                 yield normalized_line
 
     tokenizer.train_from_iterator(text_from_file_generator('../Data/turkish_news.txt'), length=174519)
@@ -8630,7 +8630,7 @@ Yukarıdaki HuggingFace örneğinde kendi normalizasyon boru hattımızı da kul
 
     import normalizer
 
-    tr_nomalizer = normalizer.build_turkish_light_normalizer()
+    tr_normalizer = normalizer.build_turkish_light_normalizer()
 
     tokenizer = Tokenizer(WordPiece(unk_token='[UNK]'))
     tokenizer.pre_tokenizer = Whitespace()
@@ -8641,7 +8641,7 @@ Yukarıdaki HuggingFace örneğinde kendi normalizasyon boru hattımızı da kul
     def text_from_file_generator(path):
         with open(path, encoding='utf-8') as f:
             for line in f:
-                normalized_line = tr_nomalizer(line)
+                normalized_line = tr_normalizer(line)
                 yield normalized_line
 
     tokenizer.train_from_iterator(text_from_file_generator('../Data/turkish_news.txt'), trainer)
@@ -8670,7 +8670,7 @@ Aşağıda örneğin tüm kodları verilmiştir.
     from tokenizers.pre_tokenizers import Whitespace
     import normalizer
 
-    tr_nomalizer = normalizer.build_turkish_light_normalizer()
+    tr_normalizer = normalizer.build_turkish_light_normalizer()
 
     tokenizer = Tokenizer(WordPiece(unk_token='[UNK]'))
     tokenizer.pre_tokenizer = Whitespace()
@@ -8681,7 +8681,7 @@ Aşağıda örneğin tüm kodları verilmiştir.
     def text_from_file_generator(path):
         with open(path, encoding='utf-8') as f:
             for line in f:
-                normalized_line = tr_nomalizer(line)
+                normalized_line = tr_normalizer(line)
                 yield normalized_line
 
     tokenizer.train_from_iterator(text_from_file_generator('../Data/turkish_news.txt'), trainer, 1000)
