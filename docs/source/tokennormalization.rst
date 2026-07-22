@@ -609,3 +609,581 @@ Sözlüksel biçime dönüştürme işlemi de dile oldukça bağımlıdır. Tür
 kütüphanelerin kullanılmasını tavsiye ediyoruz.
 
 
+Sözlüksel Biçime Dönüştürme ve Sözcük Türü Etiketleme
+=======================================================
+
+NLTK ile Sözlüksel Biçime Dönüştürme
+--------------------------------------
+
+Sözlüksel biçime dönüştürme (lemmatization) işlemi çeşitli kütüphaneler tarafından gerçekleştirilmektedir.
+HuggingFace gibi transformer tabanlı kütüphanelerde sözlüksel biçime dönüştürmeye ilişkin sınıflar ya da
+fonksiyonlar bulunmamaktadır.
+
+NLTK kütüphanesinde İngilizce sözlüksel biçime dönüştürme işlemi için ``nltk.stem`` modülünde
+``WordNetLemmatizer`` sınıfı bulunmaktadır. Sınıfın kullanılması oldukça kolaydır. ``WordNetLemmatizer`` sınıfı
+türünden bir nesne yaratılır. Sonra bu nesne ile sınıfın ``lemmatize`` metodu çağrılır. ``lemmatize`` metodu bir
+sözcük alıp onun sözlük biçimine geri dönmektedir. Örneğin:
+
+.. code-block:: python
+
+    from nltk.stem import WordNetLemmatizer
+
+    lemmatizer = WordNetLemmatizer()
+
+    words = [
+        'running', 'better', 'caring', 'mice', 'geese', 'feet', 'children',
+        'questioning', 'building', 'going', 'been'
+    ]
+
+    for word in words:
+        lemma = lemmatizer.lemmatize(word)
+        print(f'{word:<15}-> {lemma}')
+
+``lemmatize`` metodunun isteğe bağlı ``pos`` parametresi de vardır. Bu ``pos`` parametresi sözcüğün grubunu
+metoda söyler. Metot da bu gruba uygun bir dönüştürme yapar. İkinci parametre şunlardan biri olabilir:
+
+- ``'n'`` -> nouns
+- ``'v'`` -> verb
+- ``'a'`` -> adjectives
+- ``'r'`` -> adverbs
+- ``'s'`` -> satellite adjectives
+
+Bu parametrenin default değeri ``'n'`` biçimindedir. ``pos`` parametresi belirtilmişse yalnızca o türden
+sözcükler üzerinde dönüştürme yapılmaktadır, diğer sözcükler olduğu gibi bırakılmaktadır. Yukarıdaki programda
+``pos='n'`` için şu sonuçlar elde edilmiştir:
+
+Bu program çalıştırıldığında aşağıdaki gibi bir çıktı elde edilecektir:
+
+.. code-block:: text
+
+    running        -> running
+    better         -> better
+    caring         -> caring
+    mice           -> mouse
+    geese          -> goose
+    feet           -> foot
+    children       -> child
+    questioning    -> questioning
+    building       -> building
+    going          -> going
+    been           -> bee
+
+Görüldüğü gibi yalnızca isim olan sözcükler üzerinde dönüştürmeler yapılmıştır. Peki biz sözcüğün türünü
+bilmiyorsak ne yapabiliriz? Aslında yukarıda da belirttiğimiz gibi sağlıklı bir sözlüksel biçime dönüştürme
+işlemi için bizim sözcüğün türünü de bilmemiz gerekir. Fakat bunu da bilmiyorsak tüm türler için aynı işlemleri
+yeniden yapmaktan başka çaremiz kalmaz. Örneğin:
+
+.. code-block:: python
+
+    from nltk.stem import WordNetLemmatizer
+
+    lemmatizer = WordNetLemmatizer()
+
+    words = [
+        'running', 'better', 'caring', 'mice', 'geese', 'feet', 'children',
+        'questioning', 'building', 'going', 'been'
+    ]
+
+    pos_types = 'nvars'
+
+    lemmas = words.copy()
+    for pos_type in pos_types:
+        for i in range(len(lemmas)):
+            lemmas[i] = lemmatizer.lemmatize(lemmas[i], pos=pos_type)
+
+    for word, lemma in zip(words, lemmas):
+        print(f'{word:<15}→ {lemma}')
+
+Buradan şöyle bir çıktı elde edilmiştir:
+
+.. code-block:: text
+
+    running        → run
+    better         → good
+    caring         → care
+    mice           → mouse
+    geese          → goose
+    feet           → foot
+    children       → child
+    questioning    → question
+    building       → build
+    going          → go
+    been           → be
+
+Yukarıda da belirttiğimiz gibi sağlıklı bir sözlüksel biçime dönüştürme işleminden önce aslında sözcük
+türlerinin elde edilmiş olması gerekir. Aksi takdirde aşağıdaki gibi sorunlar çıkabilmektedir:
+
+.. code-block:: python
+
+    word = 'leaves'
+
+    lemma =  lemmatizer.lemmatize(word, pos='n')
+    print(lemma)            # leaf
+
+    lemma =  lemmatizer.lemmatize(word, pos='v')
+    print(lemma)            # leave
+
+Sözcük türü etiketlemesi (*POS tagging (part-of-speech tagging)*) morfolojik analizde önemli bir kavramdır.
+Cümle içerisindeki her sözcüğe onun türünü belirten bir etiket atanması işlemine denilmektedir. Morfolojik
+analiz işlemi yapan kütüphanelerde her zaman bulunan bir niteliktir. Biz aslında kavramla daha önce de
+karşılaşmıştık. NLTK'de sözcük türü etiketlemesi için ``pos_tag`` isimli fonksiyon kullanılmaktadır. Örneğin:
+
+.. code-block:: python
+
+    from nltk import pos_tag
+
+    words = ['i', 'am', 'going', 'to', 'school']
+    tag_list = pos_tag(words)       # [('i', 'NN'), ('am', 'VBP'), ('going', 'VBG'), ('to', 'TO'), ('school', 'NN')]
+
+Burada default kullanılan etiketleme sistemi *Penn Treebank* sistemidir. Bunların listesi aşağıdaki tabloda
+verilmektedir:
+
+.. list-table:: Penn Treebank Etiket Kümesi
+   :header-rows: 1
+   :widths: 10 45 25
+
+   * - Etiket
+     - Anlam
+     - Örnek
+   * - CC
+     - bağlaç, eşdüzey
+     - and, but, or
+   * - CD
+     - sayı, asıl
+     - one, 42
+   * - DT
+     - belirteç (determiner)
+     - the, a, this
+   * - EX
+     - varoluşsal "there"
+     - there (is)
+   * - FW
+     - yabancı sözcük
+     - de facto
+   * - IN
+     - edat / yantümce bağlacı
+     - in, of, because
+   * - JJ
+     - sıfat (veya sıra sayısı)
+     - big, old, first
+   * - JJR
+     - sıfat, karşılaştırma
+     - bigger
+   * - JJS
+     - sıfat, üstünlük
+     - biggest
+   * - LS
+     - liste öğesi imi
+     - 1., a)
+   * - MD
+     - kiplik yardımcı fiili
+     - can, must, will
+   * - NN
+     - isim, cins, tekil/kütle
+     - dog, water
+   * - NNS
+     - isim, cins, çoğul
+     - dogs
+   * - NNP
+     - özel isim, tekil
+     - Ankara, Alice
+   * - NNPS
+     - özel isim, çoğul
+     - the Alps
+   * - PDT
+     - ön-belirteç
+     - all (the), both
+   * - POS
+     - iyelik eki
+     - 's
+   * - PRP
+     - şahıs zamiri
+     - I, she, it
+   * - PRP$
+     - iyelik zamiri
+     - my, her, its
+   * - RB
+     - zarf
+     - quickly, very
+   * - RBR
+     - zarf, karşılaştırma
+     - faster
+   * - RBS
+     - zarf, üstünlük
+     - fastest
+   * - RP
+     - parçacık (particle)
+     - up (give up)
+   * - SYM
+     - sembol
+     - %, &
+   * - TO
+     - "to" edat/mastar imi
+     - to (go)
+   * - UH
+     - ünlem
+     - oh, wow
+   * - VB
+     - fiil, yalın hal
+     - run, see
+   * - VBD
+     - fiil, geçmiş zaman
+     - ran, saw
+   * - VBG
+     - fiil, -ing biçimi / ulaç
+     - running
+   * - VBN
+     - fiil, past participle
+     - seen, taken
+   * - VBP
+     - fiil, geniş zaman, 3. tekil dışı
+     - (I) run
+   * - VBZ
+     - fiil, geniş zaman, 3. tekil
+     - (she) runs
+   * - WDT
+     - WH-belirteç
+     - which, that
+   * - WP
+     - WH-zamiri
+     - who, what
+   * - WP$
+     - WH-zamiri, iyelik
+     - whose
+   * - WRB
+     - WH-zarfı
+     - where, when
+
+Tablodan gördüğünüz gibi, başı belirli bir harfle başlayan etiketler belli bir grubu belirtmektedir. Örneğin
+'J' ile başlayan etiketler sıfatlara ilişkindir, 'V' ile başlayan etiketler fiillere ilişkindir. ``pos_tag``
+fonksiyonunda ``tagset`` parametresi *universal* girilirse aşağıdaki etiket kümesi kullanılmaktadır:
+
+.. list-table:: Universal Etiket Kümesi
+   :header-rows: 1
+   :widths: 12 30 40
+
+   * - Etiket
+     - Anlam
+     - Katlanan Penn Etiketleri
+   * - VERB
+     - fiil (kiplikler dahil)
+     - VB VBD VBG VBN VBP VBZ MD
+   * - NOUN
+     - isim
+     - NN NNS NNP NNPS
+   * - PRON
+     - zamir
+     - PRP PRP$ WP WP$
+   * - ADJ
+     - sıfat
+     - JJ JJR JJS
+   * - ADV
+     - zarf
+     - RB RBR RBS WRB
+   * - ADP
+     - edat/ilgeç
+     - IN
+   * - CONJ
+     - bağlaç
+     - CC
+   * - DET
+     - belirteç
+     - DT PDT WDT EX
+   * - NUM
+     - sayı
+     - CD
+   * - PRT
+     - parçacık
+     - RP TO POS
+   * - X
+     - diğer/belirsiz
+     - FW LS SYM UH
+   * - .
+     - noktalama
+     - . , : ( ) '' \`\` # $ vb.
+
+Örneğin:
+
+.. code-block:: python
+
+    from nltk import pos_tag
+
+    words = ['i', 'am', 'going', 'to', 'scool']
+    tag_list = pos_tag(words, tagset='universal')
+    print(tag_list)     # [('i', 'NOUN'), ('am', 'VERB'), ('going', 'VERB'), ('to', 'PRT'), ('scool', 'VERB')]
+
+Şimdi de NLTK'de önce sözcüğün tür etiketini elde edip ``lemmatize`` metoduna doğru etiketi geçirelim:
+
+.. code-block:: python
+
+    from nltk.stem import WordNetLemmatizer
+    from nltk import pos_tag
+
+    lemmatizer = WordNetLemmatizer()
+
+    words = [
+        "The", "falling", "leaves", "drift", "by", "the", "window",
+        "The", "autumn", "leaves", "of", "red", "and", "gold",
+        "I", "see", "your", "lips,", "the", "summer", "kisses",
+        "The", "sun-burned", "hands", "I", "used", "to", "hold"
+    ]
+
+    def tag_to_lempos(tag):
+        if tag.startswith('J'):
+            return 'a'
+        elif tag.startswith('V'):
+            return 'v'
+        elif tag.startswith('R'):
+            return 'r'
+        else:
+            return 'n'
+
+    word_tags = pos_tag(words)
+    for word, tag in word_tags:
+        lemma = lemmatizer.lemmatize(word, pos=tag_to_lempos(tag))
+        print(f'{word:<15}-> {lemma}')
+
+Burada ``tag_to_lempos`` fonksiyonu Penn Treebank sistemine ilişkin etiketi ``lemmatize`` fonksiyonunun ``pos``
+parametresine uygun hale getirmektedir. Programın çıktısı şöyledir:
+
+.. code-block:: text
+
+    The            -> The
+    falling        -> fall
+    leaves         -> leaf
+    drift          -> drift
+    by             -> by
+    the            -> the
+    window         -> window
+    The            -> The
+    autumn         -> autumn
+    leaves         -> leave
+    of             -> of
+    red            -> red
+    and            -> and
+    gold           -> gold
+    I              -> I
+    see            -> see
+    your           -> your
+    lips,          -> lips,
+    the            -> the
+    summer         -> summer
+    kisses         -> kiss
+    The            -> The
+    sun-burned     -> sun-burned
+    hands          -> hand
+    I              -> I
+    used           -> use
+    to             -> to
+    hold           -> hold
+
+NLTK kütüphanesinin Türkçe işlem yapamadığını, dolayısıyla yukarıdaki sözlüksel biçime dönüştürme işlemlerinin
+Türkçe için yapılamayacağını bir kez daha vurgulamak istiyoruz.
+
+Sözcük Türü Etiketleme Yöntemleri
+-------------------------------------
+
+Sözcük türü etiketlemesi bağlamdan bağımsız yapılabilecek bir işlem değildir. Çünkü örneğin *leaves* sözcüğünün
+bir bağlam olmadan *terketmek* sözcüğü ile mi yoksa *yapraklar* sözcüğü ile mi ilgili olduğu anlaşılamaz.
+Aslında yukarıda gördüğümüz gibi ``pos_tag`` fonksiyonu bağlamı dikkate almaktadır. Tabii bizim ``pos_tag``
+fonksiyonundan önce yazıyı sözcük tabanlı atomlarına ayırmamız gerekir. Aslında bu amaçla tam uyumu yakalamak
+için daha önce görmüş olduğumuz NLTK'deki ``TreeBankWordTokenizer`` sınıfını ya da doğrudan
+``nltk.tokenize`` fonksiyonunu kullanabiliriz:
+
+.. code-block:: python
+
+    from nltk.stem import WordNetLemmatizer
+    from nltk import word_tokenize, pos_tag
+
+    lemmatizer = WordNetLemmatizer()
+
+    autumn_leaves = """
+        The falling leaves drift by the window
+        The autumn leaves of red and gold
+        I see your lips, the summer kisses
+        The sun-burned hands I used to hold
+    """
+
+    def tag_to_lempos(tag):
+        if tag.startswith('J'):
+            return 'a'
+        elif tag.startswith('V'):
+            return 'v'
+        elif tag.startswith('R'):
+            return 'r'
+        else:
+            return 'n'
+
+    words = word_tokenize(autumn_leaves)
+    word_tags = pos_tag(words)
+    for word, tag in word_tags:
+        lemma = lemmatizer.lemmatize(word, pos=tag_to_lempos(tag))
+        print(f'{word:<15}-> {lemma}')
+
+Peki sözcük türü etiketlemesi nasıl yapılmaktadır? İşte bunun için de aslında çeşitli yöntemler
+kullanılabilmektedir:
+
+.. list-table:: Sözcük Türü Etiketleme Yöntemleri
+   :header-rows: 1
+   :widths: 25 75
+
+   * - Yöntem
+     - Ana Fikir
+   * - Sözlük / Unigram
+     - Her sözcüğe eğitim verisindeki en sık etiketini ata; bağlam yok
+   * - Kural tabanlı (Regexp)
+     - Elle yazılmış örüntüler: '-ing ile bitiyorsa VBG' gibi kurallar
+   * - Brill (dönüşüm tabanlı)
+     - Kaba tahminle başla; hatayı azaltan düzeltme kurallarını veriden öğren
+   * - N-gram (bigram/trigram)
+     - Önceki 1-2 etikete koşullu en olası etiketi seç; seyreklik sorunu var
+   * - HMM + Viterbi
+     - Etiket dizisini gizli durum zinciri say; en olası yolu Viterbi ile bul
+   * - TnT
+     - Ölçeklenmiş trigram HMM; yumuşatma ve sonek analiziyle pratik/hızlı
+   * - MaxEnt (log-linear)
+     - Zengin özniteliklerle (ek, büyük harf, komşu) koşullu olasılık modeli
+   * - CRF
+     - Tüm diziyi tek seferde puanlayan ayrımcı model; etiket etkileşimini öğrenir
+   * - Averaged Perceptron
+     - Basit lineer güncelleme + ağırlık ortalama; NLTK pos_tag'in motoru
+   * - BiLSTM(-CRF)
+     - Sözcük gömmeleri + çift yönlü RNN; bağlamı iki yönden okur
+   * - Transformer (BERT vb.)
+     - Önceden eğitilmiş bağlamsal gömmeler + ince ayar; güncel en iyi sonuç
+
+Görüldüğü gibi POS işlemi için *kural tabanlı yöntemler*, *istatistiksel ve olasılıksal yöntemler*, *sinir ağı
+içeren yöntemler* uygulanabilmektedir.
+
+spaCy ile Türkçe Sözlüksel Biçime Dönüştürme
+------------------------------------------------
+
+Türkçe sözlüksel biçime dönüştürme işlemleri spaCy kütüphanesiyle yapılabilir. Anımsanacağı gibi spaCy
+kütüphanesinin Türkçe desteği bulunmaktadır. Biz spaCy kütüphanesinin nasıl kullanıldığını kabaca görmüştük.
+Önce eğitim veri kümesi belirtilerek bir model nesnesi oluşturuluyordu. Bu model nesnesine bir yazı verilerek
+ondan doküman nesnesi elde ediliyordu. Faydalı bilgiler bu doküman nesnesinin dolaşılmasıyla elde ediliyordu.
+Doküman nesnesinin dolaşılmasıyla elde edilen token nesnelerinin ``lemma_`` özniteliği ilgili sözcüğün
+sözlüksel biçimini vermektedir. Örneğin:
+
+.. code-block:: python
+
+    import spacy
+
+    nlp = spacy.load('tr_core_news_md')
+
+    text = 'Araştırmacılar doğal dil işleme yöntemlerini inceliyordu.'
+    doc = nlp(text)
+
+    print('spaCy Türkçe Lemmatization:')
+    print('┌─────────────────────────┬──────────┬─────────────────────────┐')
+    print('│         Sözcük          │   POS    │          Lemma          │')
+    print('├─────────────────────────┼──────────┼─────────────────────────┤')
+    for token in doc:
+        if not token.is_punct and not token.is_space:
+            print(f'│ {token.text:<23} │ {token.pos_:<8} │ {token.lemma_:<23} │')
+    print('└─────────────────────────┴──────────┴─────────────────────────┘')
+
+Buradan şöyle bir çıktı elde edilmiştir:
+
+.. code-block:: text
+
+    spaCy Türkçe Lemmatization:
+    ┌─────────────────────────┬──────────┬─────────────────────────┐
+    │         Sözcük          │   POS    │          Lemma          │
+    ├─────────────────────────┼──────────┼─────────────────────────┤
+    │ Araştırmacılar          │ NOUN     │ araştırmacı             │
+    │ doğal                   │ ADJ      │ doğal                   │
+    │ dil                     │ NOUN     │ dil                     │
+    │ işleme                  │ VERB     │ işle                    │
+    │ yöntemlerini            │ NOUN     │ yöntem                  │
+    │ inceliyordu             │ VERB     │ incel                   │
+    └─────────────────────────┴──────────┴─────────────────────────┘
+
+Stanza ile Türkçe Sözlüksel Biçime Dönüştürme
+--------------------------------------------------
+
+Şimdi de Türkçe sözlüksel biçime dönüştürme işleminin Stanza ile nasıl yapıldığını görelim. Biz Stanza'nın
+nasıl kullanıldığını kabaca zaten görmüştük. Stanza önce metni cümlelere dönüştürüp, cümleleri atomlarına
+ayırıyordu. Biz daha önce aşağıdaki gibi bir örnek yapmıştık:
+
+.. code-block:: python
+
+    import stanza
+
+    text = """
+        Bugün hava çok güzel!!!     Herkes kıralara gitti...... Ama ben Ağrı Dağına çıktım."
+    """
+
+    nlp = stanza.Pipeline(lang='tr', processors='tokenize')
+    doc = nlp(text)
+
+    for sentence in doc.sentences:
+        for token in sentence.tokens:
+            print(f'token: {token.text}, start: {token.start_char}, end: {token.end_char}')
+
+Biz daha önce ``sentence`` nesnesinin ``tokens`` özniteliğini kullanmıştık. Sözlüksel biçime dönüştürmede
+``tokens`` özniteliği yerine ``words`` özniteliğinin kullanılması daha uygundur. Çünkü ``words`` özniteliği
+sözcükleri hedefimize daha uygun bir biçimde atomlarına ayırmaktadır. Ayrıca ``Pipeline`` nesnesini
+oluştururken bizim ``processors`` parametresine ``"lemma"`` özelliğini de eklememiz gerekir. Örneğin:
+
+.. code-block:: python
+
+    nlp = stanza.Pipeline(lang='tr', processors='tokenize,pos,lemma')
+
+Artık ``word`` nesnesinin içerisinden ``lemma`` özniteliği ile sözcüğün sözlüksel biçimini elde edebiliriz:
+
+.. code-block:: python
+
+    import stanza
+
+    nlp = stanza.Pipeline(lang='tr', processors='tokenize,pos,lemma')
+
+    text = """
+        Bugün hava çok güzel!!!     Herkes kıralara gitti...... Ama ben Ağrı Dağına çıktım."
+    """
+
+    doc = nlp(text)
+
+    print('Stanza Türkçe Lemmatization:')
+    print('┌─────────────────────────┬──────────┬─────────────────────────┐')
+    print('│         Sözcük          │   POS    │          Lemma          │')
+    print('├─────────────────────────┼──────────┼─────────────────────────┤')
+
+    for sentence in doc.sentences:
+        for word in sentence.words:
+            if word.upos != 'PUNCT':
+                print(f'│ {word.text:<23} │ {word.upos:<8} │ {word.lemma:<23} │')
+                print('└─────────────────────────┴──────────┴─────────────────────────┘')
+
+Buradan şöyle bir çıktı elde edilmiştir:
+
+.. code-block:: text
+
+    ┌─────────────────────────┬──────────┬─────────────────────────┐
+    │         Sözcük          │   POS    │          Lemma          │
+    ├─────────────────────────┼──────────┼─────────────────────────┤
+    │ Bugün                   │ NOUN     │ bugün                   │
+    ├─────────────────────────┼──────────┼─────────────────────────┤
+    │ hava                    │ NOUN     │ hava                    │
+    ├─────────────────────────┼──────────┼─────────────────────────┤
+    │ çok                     │ ADV      │ çok                     │
+    ├─────────────────────────┼──────────┼─────────────────────────┤
+    │ güzel                   │ ADJ      │ güzel                   │
+    ├─────────────────────────┼──────────┼─────────────────────────┤
+    │ Herkes                  │ NOUN     │ herkes                  │
+    ├─────────────────────────┼──────────┼─────────────────────────┤
+    │ kıralara                │ NOUN     │ kıra                    │
+    ├─────────────────────────┼──────────┼─────────────────────────┤
+    │ gitti                   │ VERB     │ git                     │
+    ├─────────────────────────┼──────────┼─────────────────────────┤
+    │ Ama                     │ CCONJ    │ ama                     │
+    ├─────────────────────────┼──────────┼─────────────────────────┤
+    │ ben                     │ PRON     │ ben                     │
+    ├─────────────────────────┼──────────┼─────────────────────────┤
+    │ Ağrı                    │ NOUN     │ ağır                    │
+    ├─────────────────────────┼──────────┼─────────────────────────┤
+    │ Dağına                  │ NOUN     │ dağın                   │
+    ├─────────────────────────┼──────────┼─────────────────────────┤
+    │ çıktım                  │ VERB     │ çık                     │
+    └─────────────────────────┴──────────┴─────────────────────────┘
+
