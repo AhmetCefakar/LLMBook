@@ -59,8 +59,16 @@ Gövdeleme ve Sözlüksel Biçime Dönüştürmeye Giriş
 
 Atom normalizasyonunda temelde iki işlem yapılmaktadır:
 
-1) Gövdeleme (stemming)
-2) Sözlüksel biçime dönüştürme (lemmatization)
+1) Durak sözcüklerinin (stop words) atılması
+2) Gövdeleme (stemming)
+3) Sözlüksel biçime dönüştürme (lemmatization)
+
+Yazıdaki tek başına önemli bir anlama sahip olmayan sık geçen sözcüklere "**durak sözcükleri (stop words)**" 
+denilmektedir. Klasik doğal dil işleme uygulamalarında bu tür sözcüklerin atılması fayda sağlayabilmektedir. Mesela 
+İngilizce`deki *the*, *a*, *an*, *is*, *in*, *of*, *and*, *to*, Türkçe'deki *ve*, *ile*, *ama*, *için*, *gibi*, *bu*, 
+*şu*, *da*, *de* tipik durak sözcükleridir. Şüphesiz durak sözcüklerinin de aslında metin içerisinde işlevleri vardır. 
+Ancak bunların tasşıdığı bilgi bazı uygulamalarda ihmal edilebilecek düzeydedir. Sözcük hazinesini düşürmek için bunların
+atılması uygun olabilmektedir. 
 
 İngilizce *stem* sözcüğü *kökün toprak dışında kalan sap ya da gövde kısmı* anlamına gelmektedir. Biz İngilizce
 *stemming* yerine Türkçe *gövdeleme* sözcüğünü kullanacağız. *Stemming* terimi bazı Türkçe kaynaklarda *köklerine
@@ -68,9 +76,9 @@ ayırma*, *kök bulma* gibi sözcüklerle de ifade edilmektedir. *Lemma* sözcü
 bir sözcüğün tüm çekimli biçimlerini temsil eden sözlük biçimidir. Biz bu *lemmatization* sözcüğünü Türkçe *sözlüksel
 biçime dönüştürme* biçiminde ifade edeceğiz.
 
-Gövdeleme ve sözlüksel biçime dönüştürme aynı birlikte kullanılan yöntemler değildir. Yani bunlardan yalnızca biri
-kullanılmaktadır. Genellikle sözlüksel biçime dönüştürme tercih edilmektedir. Gövdeleme çok seyrek kullanılmaktadır.
-Atomsal normalizasyon sözcük temelinde yapılmaktadır. Dolayısıyla alt sözcük atomlarına ayırma (subword tokenization)
+Gövdeleme ve *sözlüksel biçime dönüştürme* aynı birlikte kullanılan yöntemler değildir. Yani bunlardan yalnızca biri
+kullanılmaktadır. Genellikle *sözlüksel biçime dönüştürme* tercih edilmektedir. Gövdeleme çok seyrek kullanılmaktadır.
+Atomsal normalizasyon sözcük temelinde yapılmaktadır. Dolayısıyla *alt sözcük atomlarına ayırma (subword tokenization)*
 işleminden sonra atom normalizasyonu uygulanamaz. Biz transformer tabanlı modern yöntemlerin atom normalizasyonu
 kullanmadığını belirtmiştik. Transformer tabanlı yöntemler zaten hemen her zaman alt sözcük atomlarına ayırma
 yöntemlerini kullanmaktadır.
@@ -82,6 +90,58 @@ Gövdeleme bir sözcüğü temsil eden daha yalın bir sözcüğün kullanılmas
 gövdeye sahip olan sözcükler farklı atomlarla değil aynı atomla temsil edilmiş olur. Gövdelemede gövdesine ayrılmış
 sözcüğün anlamlı bir sözcük olması (yani sözlükte bir karşılığının olması) gerekmez, yalnızca aynı gövdeye sahip olan
 sözcüklerin indirgendiği ortak bir harf diziliminin olması yeterlidir.
+
+Metinden durak sözcüklerini atmak için onların listesini oluşturmamız gerekir. Pek çok dil için durak sözcükleri
+zaten oluşturulmuş durumdadır. Yaygın kullanılan kütüphaneler bunların listesini bize verebilmektedir. NLTK 
+kütüphanesinden durak sözcüklerini şöyle elde edebiliriz:
+
+.. code-block:: python
+
+    import nltk
+
+    nltk.download('stopwords')
+
+
+    from nltk.corpus import stopwords
+
+    english_stops = stopwords.words('english')
+    turkish_stops = stopwords.words('turkish')
+
+NLTK'deki Türkçe durak sözcükleri şunlardır:
+
+.. code-block:: python
+
+    ['acaba', 'ama', 'aslında', 'az', 'bazı', 'belki', 'biri', 'birkaç', 'birşey', 'biz', 'bu', 'çok', 'çünkü', 'da', 
+    'daha', 'de', 'defa', 'diye', 'eğer', 'en', 'gibi', 'hem', 'hep', 'hepsi', 'her', 'hiç', 'için', 'ile', 'ise', 
+    'kez', 'ki', 'kim', 'mı', 'mu', 'mü', 'nasıl', 'ne', 'neden', 'nerde', 'nerede', 'nereye', 'niçin', 'niye', 'o', 
+    'sanki', 'şey', 'siz', 'şu', 'tüm', 've', 'veya', 'ya', 'yani']
+
+spaCy kütüphanesinde de İnglizce ve Türkçe durak sözcükleri bulunmaktadır. Ancak bu kütüphanedeki Türkçe durak
+sözcükleri 500'ün yukarısındadır. Bunları aşağıdak gibi kullanabilirsiniz:
+
+.. code-block:: python
+
+    from spacy.lang.en.stop_words import STOP_WORDS as english_stops
+    from spacy.lang.tr.stop_words import STOP_WORDS as turkish_stops 
+
+Peki atom listesindeki durak sözcüklerinden nasıl kurtulabiliriz. Bunu yapmanın en kolay yolu atom listesini *küme*
+*(set)* haline geitirip ``difference`` metodunu ya da çıkartma operatörünü kullanmaktadır. ``difference`` metodunun 
+parametresi dolaşılabilir herhangi bir nesne olabilir. Ancak çıkartma operatörünün parametresi ``set`` ya da 
+``frozsenset`` türünden olmak zorundadır. Mesela:
+
+.. code-block:: python
+
+    from spacy.lang.tr.stop_words import STOP_WORDS
+
+    tokens = ['bugün', 'hava', 'güzel', 'mi', 'ali', 've', 'veli', 'ile', 'çok', 'dolaştık']
+    normalized_tokens = set(tokens) - STOP_WORDS
+    print(normalized_tokens)
+
+Durak sözcükleri atıldıktan sonra şu atomlar kalmıştır:
+
+.. code-block:: python
+
+    {'bugün', 'ali', 'güzel', 'dolaştık', 'veli', 'hava'}
 
 Gövdeleme genel olarak *kural tabanlı (rule based)* yöntemlerle uygulanmaktadır. Gövdeleme için çeşitli algoritmalar
 önerilmiştir. Ancak bu algoritmaların çoğu İngilizce temel alınarak oluşturulmuştur dolayısıyla Türkçeye uygun

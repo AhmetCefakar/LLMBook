@@ -6881,7 +6881,7 @@ Eğitim Sonrası Bilgi Alma: get_vocab, token_to_id ve id_to_token
 
 Eğitim bittikten sonra biz Tokenizer nesnesi içerisinden faydalı birtakım bilgileri elde edebiliriz. Tokenizer
 sınıfının get_vocab metodu bize sözcük hazinesini ara birleştirmeler de dahil olacak biçimde bir sözlük olarak
-vermektedir. Bu sözlüğün anahtarları atomları belirten alt sözcüklerden, değerleri ise onlara karşı düşen id
+vermektedir. Bu sözlüğün anahtarları atomları belirten alt sözcüklerden, değerleri ise onlara karşı düşürülen id
 numaralarından oluşmaktadır. Atomların sayısal biçimde temsil edilmesi sonraki bölümde ayrı bir başlıkta ele
 alınacaktır. Örneğin:
 
