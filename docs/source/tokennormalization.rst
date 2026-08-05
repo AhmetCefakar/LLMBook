@@ -1187,3 +1187,118 @@ Buradan şöyle bir çıktı elde edilmiştir:
     │ çıktım                  │ VERB     │ çık                     │
     └─────────────────────────┴──────────┴─────────────────────────┘
 
+Zemberek ve Zeyrek ile Sözlüksel Biçime Dönüştürme, Sözcük Hazinesinin Sayısallaştırılması
+==============================================================================================
+
+Zemberek ile Sözlüksel Biçime Dönüştürme
+--------------------------------------------
+
+Zemberek ile sözlüksel biçime dönüştürme işlemi için önce ``TurkishMorphology`` sınıfının static
+``create_with_defaults`` metodu çağrılır:
+
+.. code-block:: python
+
+    from zemberek.morphology import TurkishMorphology
+
+    morphology = TurkishMorphology.create_with_defaults()
+
+Buradan bir ``TurkishMorphology`` nesnesi elde edilir. Daha sonra nesneyle sınıfın
+``analyze_and_disambiguate`` metodu çağrılır:
+
+.. code-block:: python
+
+    analysis = morphology.analyze_and_disambiguate('Ağrı dağı çok yüksekmiş')
+
+Bu metot bize ``SingleAnalysis`` isimli bir sınıf türünden nesneler vermektedir. ``SingleAnalysis`` sınıfının
+``item`` isimli örnek niteliği bize ``DictionaryItem`` türünden bir nesne vermektedir. İşte bu nesnenin
+``lemma`` özniteliği ile biz sözcüklerin sözlüksel biçimlerini elde edebiliriz:
+
+.. code-block:: python
+
+    for result in analysis.best_analysis():
+        print(result.item.lemma)
+
+Bu işlemlerden aşağıdaki çıktı elde edilmiştir:
+
+.. code-block:: text
+
+    Ağrı
+    dağ
+    çok
+    yüksek
+
+Aşağıda bu işlemin tam bir kod örneği verilmiştir:
+
+.. code-block:: python
+
+    from zemberek.morphology import TurkishMorphology
+
+    morphology = TurkishMorphology.create_with_defaults()
+    analysis = morphology.analyze_and_disambiguate('Ağrı dağı çok yüksekmiş')
+    for result in analysis.best_analysis():
+        print(result.item.lemma)
+
+Zeyrek ile Sözlüksel Biçime Dönüştürme
+-------------------------------------------
+
+Türkçe işlemler için genel olarak Zemberek gibi Zeyrek gibi kütüphanelerin daha iyi sonuçlar verdiğini
+söylemiştik. Anımsayacağınız gibi Zemberek aslında orijinali Java'da yazılmış olan bir kütüphaneydi. Zeyrek
+kütüphanesinde sözlüksel biçime dönüştürme için önce ``MorphAnalyzer`` sınıfı türünden bir nesne yaratılır:
+
+.. code-block:: python
+
+    import zeyrek
+
+    ma = zeyrek.MorphAnalyzer()
+
+Sözlüksel biçime dönüştürme işlemi sınıfın ``lemmatize`` metoduyla yapılmaktadır. ``lemmatize`` metodu
+parametre olarak yazıyı alır. Bu yazıyı sözcüklerine ayrıştırarak bize iki elemanlı demetlerden oluşan bir
+sözlük verir. İki elemanlı demetin ilk elemanı yazının sözcüğü, ikinci elemanı ise onun sözlüksel
+biçimleridir. Demetlerin ikinci elemanı bir dizidir. Metodun parametrik yapısı tür açıklamalarıyla şöyle
+ifade edilebilir:
+
+.. code-block:: python
+
+    def lemmatize(self, text: str) -> list[tuple[str, list[str]]]
+
+Örneğin:
+
+.. code-block:: python
+
+    result = analyzer.lemmatize('Ağrı dağı çok yüksekmiş')
+    for word, lemmas in   result:
+        print(f'{word} -> {lemmas}')
+
+Buradan şöyle bir çıktı elde edilmiştir:
+
+.. code-block:: text
+
+    Ağrı -> ['Ağrı', 'ağrı', 'ağrımak']
+    dağı -> ['dağ']
+    çok -> ['çok']
+    yüksekmiş -> ['Yüksek', 'yüksek']
+
+Burada *yüksekmiş* gibi bir sözcüğün sözlüksel karşılığı için hem *Yüksek* hem de *yüksek* sözcüklerinin
+verildiğini görüyorsunuz. Kullanılan sözlükte *Yüksek* aynı zamanda soyadı belirten özel bir isim olduğu için
+ayrıca büyük harfli biçimde de verilmiştir.
+
+Tabii biz uygulamada yazıyı küçük harflere dönüştürüp sözlüksel biçime ilişkin listenin ilk elemanını
+kullanabiliriz.
+
+Aşağıda bu işlemin tam bir kod örneği verilmiştir:
+
+.. code-block:: python
+
+    import zeyrek
+
+    analyzer = zeyrek.MorphAnalyzer()
+
+    result = analyzer.lemmatize('Ağrı dağı çok yüksekmiş')
+    for word, lemmas in   result:
+        print(f'{word} -> {lemmas}')
+
+    analyzer = zeyrek.MorphAnalyzer()
+
+    result = analyzer.lemmatize('ağrı dağı çok yüksekmiş')
+    for word, lemmas in result:
+        print(f'{word} -> {lemmas[0]}')

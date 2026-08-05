@@ -40,3 +40,4 @@ documentation for details.
    textnormalization
    tokenization
    tokennormalization
+   digitalconversionofthedictionarytreasury
