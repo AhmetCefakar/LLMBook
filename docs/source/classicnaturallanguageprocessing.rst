@@ -1231,3 +1231,1435 @@ civarında bir ``accuracy`` elde edilmiştir.
 
     print(accuracy)
 
+Model Değerlendirme: Doğruluk Skoru ve K-Fold Çapraz Sınama
+===========================================================
+
+Doğruluk (Accuracy) Skorunun Hesaplanması
+-----------------------------------------
+
+Aslında scikit-learn içerisinde isabet oranını hesaplayan ``sklearn.metrics`` modülünde ``accuracy_score`` isimli bir
+fonksiyon da bulunmaktadır. Fonksiyonun parametrik yapısı şöyledir:
+
+.. code-block:: python
+
+    sklearn.metrics.accuracy_score(y_true, y_pred, *, normalize=True, sample_weight=None)
+
+Fonksiyonun birinci parametresi gerçek y değerini, ikinci parametresi tahmin edilen y değerini belirtmektedir.
+(Tabii bunun tersi de aynı sonucu verecektir.) Örneğin:
+
+scikit-learn içerisindeki hazır ``NaiveBayesClassifier`` sınıfından da benzer bir sonuç (%70 civarında) elde
+edilmiştir. Aşağıda bunun kodunu da veriyoruz.
+
+.. code-block:: python
+
+    import pandas as pd
+
+    df = pd.read_csv('../Data/turkish_movie_sentiment_labeled.csv')
+    comments = df['comment']
+    labels = df['label']
+
+    from sklearn.feature_extraction.text import CountVectorizer
+    from sklearn.naive_bayes import MultinomialNB
+    from sklearn.pipeline import Pipeline
+    from sklearn.metrics import accuracy_score
+
+    def turkish_lowercase(text):
+        return text.replace('İ', 'i').replace('I', 'ı').lower()
+
+    pl = Pipeline(
+        [
+            ('CountVectorizer', CountVectorizer(preprocessor=turkish_lowercase, lowercase=False)),
+            ('MultinomialNB', MultinomialNB())
+        ])
+
+    pl.fit(comments, labels)
+
+    TRAIN_SPLIT = 0.80
+
+    df = pd.read_csv('../Data/turkish_movie_sentiment_labeled.csv')
+
+    shuffled_df = df.sample(frac=1)
+    split_row = round(len(df) * TRAIN_SPLIT)
+
+    training_df = shuffled_df[:split_row]
+    test_df = shuffled_df[split_row:]
+
+    pl.fit(training_df['comment'], training_df['label'])
+
+    predict_result = pl.predict(test_df['comment'])
+
+    accuracy = accuracy_score(test_df['label'], predict_result)
+    print(accuracy)
+
+Eğitim ve Test Veri Kümelerine Ayırma: train_test_split
+-------------------------------------------------------
+
+Veri kümesini *eğitim ve test* olmak üzere iki kısma ayırmak için scikit-learn kütüphanesinde ``model_selection``
+modülünde bulunan ``train_test_split`` isimli ünlü bir fonksiyon vardır. Uygulamacılar bu amaç için bu fonksiyonu
+çok sık kullanmaktadır. ``train_test_split`` fonksiyonunun parametrik yapısı şöyledir:
+
+.. code-block:: python
+
+    sklearn.model_selection.train_test_split(*arrays, test_size=None, train_size=None,
+            random_state=None, shuffle=True, stratify=None)
+
+Fonksiyonun birinci parametresinin ``*``'lı olduğuna dikkat ediniz. Yani bu birinci parametre için istenilen sayıda
+argüman girilebilir. Ancak tipik olarak fonksiyona bu birinci parametre için iki argüman verilmektedir.
+Argümanlardan ilki X verileri ikincisi ise Y verilerinden oluşmaktadır. Fonksiyon da bu X verilerini ve Y verilerini
+``test_size`` parametresiyle belirtilen oranda ayrıştırıp dörtlü bir demet biçiminde vermektedir. ``test_size`` için
+bir değer girilmezse default durumda sanki 0.25 değeri girilmiş gibi işlem yapılmaktadır. Fonksiyonun tipik kullanımı
+şöyledir:
+
+.. code-block:: python
+
+    training_dataset_x, test_dataset_x, training_dataset_y, test_dataset_y = \
+            train_test_split(dataset_x, dataset_y, test_size=0.2)
+
+Yukarıda da belirttiğimiz gibi fonksiyonun birinci parametresi için ikiden fazla argüman girilmesine çok seyrek
+gereksinim duyulmaktadır. Bu durumda fonksiyonun geri döndürdüğü demet argüman sayısı ``* 2`` elemanlı olacaktır.
+Örneğin:
+
+.. code-block:: python
+
+    x_train, x_test, y_train, y_test, z_train, z_test = train_test_split(x, y, z)
+
+Görüldüğü gibi fonksiyon girilen argüman için sırasıyla iki değer geri döndürmektedir. Fonksiyona argüman olarak
+NumPy dizisi, Pandas DataFrame ya da Series nesneleri ya da Python listesi girilebilir. Fonksiyonun girdisinin türü
+neyse çıktısının türü de aynı olur. Fonksiyonun ``train_size`` parametresi de vardır. Bu parametre test veri
+kümesinin oranını değil eğitim veri kümesinin oranını belirtmektedir. Aslında ``test_size`` ve ``train_size``
+parametreleri için float yerine int değerler de girilebilmektedir. Bu durumda girilen int değerler test ve train
+için kullanılacak eleman sayısını belirtir. Bu iki parametre birlikte kullanılamamaktadır. ``train_test_split``
+default durumda karıştırma işlemini de kendisi yapmaktadır. Eğer fonksiyonun karıştırma yapması istenmiyorsa
+``shuffle`` parametresi ``False`` geçilebilir. Örneğin:
+
+.. code-block:: python
+
+    from sklearn.model_selection import train_test_split
+
+    import pandas as pd
+
+    df = pd.read_csv('../Data/turkish_movie_sentiment_labeled.csv')
+
+    dataset_x = df['comment']
+    dataset_y = df['label']
+
+    training_dataset_x, test_dataset_x, training_dataset_y, test_dataset_y = \
+            train_test_split(dataset_x, dataset_y, test_size=0.2)
+
+    pl.fit(training_dataset_x, training_dataset_y)
+
+    predict_result = pl.predict(test_dataset_x)
+    accuracy = (predict_result == test_dataset_y).sum() / len(test_dataset_x)
+    print(accuracy)
+
+.. code-block:: python
+
+    import pandas as pd
+
+    from sklearn.feature_extraction.text import CountVectorizer
+    from sklearn.naive_bayes import MultinomialNB
+    from sklearn.pipeline import Pipeline
+
+    from sklearn.model_selection import train_test_split
+
+    df = pd.read_csv('../Data/turkish_movie_sentiment_labeled.csv')
+
+    dataset_x = df['comment']
+    dataset_y = df['label']
+
+    training_dataset_x, test_dataset_x, training_dataset_y, test_dataset_y = train_test_split(
+        dataset_x, dataset_y, test_size=0.2)
+
+
+    def turkish_lowercase(text):
+        return text.replace('İ', 'i').replace('I', 'ı').lower()
+
+    pl = Pipeline(
+        [
+            ('CountVectorizer', CountVectorizer(preprocessor=turkish_lowercase, lowercase=False)),
+            ('MultinomialNB', MultinomialNB())
+        ])
+
+    pl.fit(training_dataset_x, training_dataset_y)
+
+    predict_result = pl.predict(test_dataset_x)
+    accuracy = (predict_result == test_dataset_y).sum() / len(test_dataset_x)
+    print(accuracy)
+
+K-Fold Çapraz Sınama (K-Fold Cross-Validation)
+----------------------------------------------
+
+Sınama (validation) işlemleri için kullanılan ve ismine *K-Fold Çapraz Sınama (K-Fold Cross-Validation)* denilen
+önemli bir yöntem de vardır. Bu yöntem özellikle model araması ve karşılaştırması yapılırken kullanılmaktadır.
+Örneğin elimizde alternatif beş model olduğunu varsayalım. Bu modellerin hangisi daha iyi performans
+göstermektedir? Ya da elimizdeki modelin bazı hyper parametrelerini değiştirelim. Hangi hyper parametreye ilişkin
+model daha iyi performans göstermektedir? İlk akla gelen yöntem veri kümesini yine *eğitim* ve *test* biçiminde
+parçaya ayırmak ve her modeli eğitim veri kümesiyle eğitip, test veri kümesiyle test edip sonuçları
+karşılaştırmak olabilir. Rastgele ayrıştırdığımız eğitim veri kümesi ve test veri kümesi bazı modeller için daha
+iyi bir veri kümesi durumundayken bazı modeller için daha kötü bir veri kümesi durumunda olabilir. Bu *eğitim* ve
+*test* veri kümeleri değiştirildiğinde modellerin performansları da değişebilmektedir. Peki bu yanlılıktan nasıl
+kurtulabiliriz? İlk akla gelen yöntem bu ayrıştırmayı bir kez değil çok kez yaparak bir ortalama değer bulmaktır.
+Ancak bu yöntemin de bazı sakıncaları söz konusu olabilmektedir. İşte bu tür durumlarda genel olarak *K-Fold
+Çapraz Sınama* denilen yöntem tercih edilmektedir.
+
+K-Fold Çapraz Sınama yönteminde veri kümesi K tane parçaya ayrılır. (İngilizce *fold* sözcüğü *kat* gibi bir
+anlama gelmektedir. K ise makine öğrenmesinde genellikle *anlamlı herhangi bir sayıyı* belirtmektedir.) Her
+defasında bu K parçadan biri sınama için, geri kalanların toplamı da eğitim için kullanılır. Her parçadan elde
+edilen performans ölçütlerinin ortalaması alınır. Örneğin K değerinin 5 olduğunu varsayalım. Bu durumda veri
+kümesini 5 parçaya ayırırız:
+
+1. Parça
+2. Parça
+3. Parça
+4. Parça
+5. Parça
+
+Sonra aşağıdaki eğitim ve test veri kümeleriyle eğitim ve sınama işlemlerini yaparız:
+
+1. Eğitim/Sınama:
+
+Eğitim Veri Kümesi = 2. Parça + 3. Parça + 4. Parça + 5. Parça
+
+Sınama Veri Kümesi = 1. Parça
+
+2. Eğitim/Sınama:
+
+Eğitim Veri Kümesi = 1. Parça + 3. Parça + 4. Parça + 5. Parça
+
+Sınama Veri Kümesi = 2. Parça
+
+3. Eğitim/Sınama:
+
+Eğitim Veri Kümesi = 1. Parça + 2. Parça + 4. Parça + 5. Parça
+
+Sınama Veri Kümesi = 3. Parça
+
+4. Eğitim/Sınama:
+
+Eğitim Veri Kümesi = 1. Parça + 2. Parça + 3. Parça + 5. Parça
+
+Sınama Veri Kümesi = 4. Parça
+
+5. Eğitim/Sınama:
+
+Eğitim Veri Kümesi = 1. Parça + 2. Parça + 3. Parça + 4. Parça
+
+Sınama Veri Kümesi = 5. Parça
+
+Aşağıdaki şekil, 5 parçaya ayrılmış bir veri kümesinde her yinelemede hangi parçanın eğitim, hangi parçanın
+sınama için kullanıldığını göstermektedir:
+
+.. figure:: _static/classicnaturallanguageprocessing/kfold-diagram.png
+   :alt: 5-Fold Çapraz Sınama şeması
+   :align: center
+
+   5-Fold Çapraz Sınamada her yinelemede kullanılan eğitim ve sınama parçaları
+
+Buradan beş ayrı performans değeri elde edilerek bunların ortalaması alınacaktır.
+
+K-Fold Çapraz Sınama yöntemi *test amacıyla değil modelin alternatif modellere göre kıyaslanması amacıyla*
+kullanılmaktadır. Ancak bazen bu yöntem tek bir model söz konusu olsa da geliştirilen modelin genellenebilirliğini
+ve overfitting durumuna direncini ölçmek için de kullanılabilmektedir. Buradaki sınama veri kümeleri ile test veri
+kümesini karıştırmayınız. Test veri kümesi nihai modelin nihai testi için kullanılmaktadır. Dolayısıyla biz örneğin
+alternatif beş yöntemi karşılaştırıp en iyisini bulup onu kullanmak istiyorsak yine önce veri kümemizi *eğitim* ve
+*test* biçiminde iki kısma ayırıp *eğitim* veri kümesi üzerinde K-Fold Çapraz Sınama işlemini yapmalıyız. Tabii en
+iyi modeli belirledikten sonra yine bu modeli tüm eğitim veri kümesiyle eğitip test veri kümesiyle test etmemiz
+gerekir. Bu durumu biz şuna benzetebiliriz: Beş kişinin İngilizce seviyesini kendi aralarında belli bir soru kümesi
+ile yarışma yaparak tespit edip buradan birinciyi seçtiğimizi düşünelim. Şimdi bu birincinin başarısını bağımsız
+başka bir testle (örneğin TOEFL, IELTS gibi) nihai olarak belirlemek isteyebiliriz.
+
+Makine öğrenmesinde *sınama (validation)* ile *test (test)* terimleri farklı anlamlarda kullanılmaktadır. Eğitim
+sırasında, eğitimin gidişatını kontrol etmek için ya da K-fold yönteminde olduğu gibi modelleri karşılaştırmak
+için uygulanan sürece *sınama* denilmektedir. Model belirlendikten sonra nihai performansın değerlendirilmesi
+sürecine test denilmektedir. Dolayısıyla *K-Fold Çapraz Sınama* ismindeki *sınama* bu bağlamda doğru bir
+sözcüktür.
+
+O halde K-Fold Çapraz Sınama yöntemi iki amaçla kullanılmaktadır:
+
+1) Tamamen farklı modelleri ya da aynı modelin farklı hyper parametreli biçimlerini daha iyi karşılaştırmak için.
+2) Belli bir modelin genellenebilirliğini yani overfitting davranışını daha iyi test etmek için.
+
+Peki K-Fold Çapraz Sınama yerine biz veri kümesini her defasında rastgele *eğitim* ve *sınama* biçiminde ayırıp
+bunu çok defa yapıp bir ortalama bulsak olmaz mı? Evet aslında bu yöntem de çoğu durumda çalışır. Ancak bu
+yöntemin dezavantajları şunlardır:
+
+- K-Fold Çapraz Sınama yönteminde veri kümesindeki her satır eğitim ve test sürecine dahil olmaktadır. Ancak
+  rastgele seçilen satırlarda bu durum söz konusu olmayabilir.
+
+- K-Fold Çapraz Sınama her uygulandığında aynı sonucu verir. Rastgele seçim farklı sonuçları verebilmektedir.
+
+- K-Fold Çapraz Sınamada daha az çaba (dolayısıyla daha az bilgisayar zamanı) yeterli olmaktadır. Rastgele seçim
+  yönteminde çok fazla seçimin yapılması gerekebilir.
+
+Peki K-Fold Çapraz Sınama yöntemindeki bu K sayısı ne olmalıdır? Pek çok uygulamacı K için makul bir değerin 5 ile
+10 arasında olduğunu belirtmektedir. K = 5 değeri %80-%20 oranıyla örtüşmektedir.
+
+Eğer veri kümesi küçükse K-Fold Çapraz Sınamanın *Leave-One-Out (LOO)* denilen bir varyasyonu da
+kullanılabilmektedir. Bu varyasyonda sınama veri kümesi tek bir satırdan oluşur. Diğer tüm satırlar eğitimde
+kullanılır. Örneğin veri kümesi 100 satır ise her yinelemede 99 satır eğitim için, 1 satır sınama için kullanılır.
+Tabii bu yöntem ancak satır sayısının az olduğu (örneğin < 100 olduğu) durumlarda makul bir yöntem haline
+gelmektedir.
+
+KFold Sınıfı ile Çapraz Sınama Uygulaması
+-----------------------------------------
+
+K-Fold Çapraz Sınama manuel bir biçimde uygulanabilir. scikit-learn kütüphanesinde K-Fold çapraz sınamasını kolay
+uygulayabilmek için ``KFold`` isimli yardımcı bir sınıf bulundurulmuştur. ``KFold`` sınıfı şöyle kullanılmaktadır:
+
+1) Önce ``KFold`` sınıfı türünden bir nesne yaratılır. Sınıfın ``__init__`` metodunun parametrik yapısı şöyledir:
+
+.. code-block:: python
+
+    class sklearn.model_selection.KFold(n_splits=5, *, shuffle=False, random_state=None)
+
+Burada birinci parametre K değerini belirtmektedir. Bu parametrenin default değerinin 5 olduğunu görüyorsunuz.
+Pek çok uygulamada bu değer 10 olarak seçilmektedir. ``shuffle`` parametresi işlemlere başlamadan önce veri
+kümesinin karıştırılıp karıştırılmayacağını belirlemekte kullanılmaktadır.
+
+2) ``KFold`` nesnesi ile sınıfın ``split`` metodu çağrılır. Metodun parametrik yapısı şöyledir:
+
+.. code-block:: python
+
+    split(X, y=None, groups=None)
+
+``split`` metodu parametre olarak bizden X veri kümesini almaktadır. Bu metot bize ürün olarak bir üretici nesne
+vermektedir. Bu üretici nesne dolaşıldığında iki elemanlı demetler elde edilir. Bu demetlerin birinci elemanı
+eğitim için kullanılacak satır indekslerini, ikinci elemanı sınama için kullanılacak satır indekslerini
+belirtmektedir. Eğer ``KFold`` nesnesi yaratılırken ``shuffle`` parametresi ``False`` geçilirse (default durum)
+buradaki indeksler ardışıl olur. Fakat bu parametre ``True`` geçilirse ardışıllık ortadan kalkar. NumPy ve
+Pandas'ta indeksler bir dizi içerisindeyse tek hamlede bu indekslerdeki elemanların elde edilebileceğini
+biliyoruz.
+
+3) ``split`` metodu ile tipik olarak aşağıdaki gibi bir döngü oluşturulur:
+
+.. code-block:: python
+
+    for train_ind, val_ind in kf.split(training_dataset_x):
+        pass
+
+Bu döngüde ilgili tahminleyici nesnesi ile ``fit`` ve ``predict`` metotları çağrılıp (ya da varsa doğrudan
+tahminleyici sınıfının ``score`` metodu da çağrılabilir) elde edilen değerler biriktirilir. Aşağıda alternatif üç
+yöntem K-Fold Çapraz Sınama işlemine sokulmuştur. Döngüye dikkat ediniz:
+
+.. code-block:: python
+
+    accuracy1_list = []
+    accuracy2_list = []
+    accuracy3_list = []
+
+    for train_indices, val_indices in kfold.split(df):
+        training_dataset_x = df.iloc[train_indices]['comment']
+        training_dataset_y = df.iloc[train_indices]['label']
+
+        pl1.fit(training_dataset_x, training_dataset_y)
+        pl2.fit(training_dataset_x, training_dataset_y)
+        pl3.fit(training_dataset_x, training_dataset_y)
+
+        validation_dataset_x =  df.iloc[val_indices]['comment']
+        validation_dataset_y = df.iloc[val_indices]['label']
+
+        predict_result1 = pl1.predict(validation_dataset_x)
+        predict_result2 = pl2.predict(validation_dataset_x)
+        predict_result3 = pl3.predict(validation_dataset_x)
+
+        accuracy1 = accuracy_score(validation_dataset_y, predict_result1)
+        accuracy2 = accuracy_score(validation_dataset_y, predict_result2)
+        accuracy3 = accuracy_score(validation_dataset_y, predict_result3)
+
+        accuracy1_list.append(accuracy1)
+        accuracy2_list.append(accuracy2)
+        accuracy3_list.append(accuracy3)
+
+Döngünün her yinelenmesinde farklı eğitim ve sınama indeksleri elde edilmektedir. Anımsanacağı gibi Pandas ve
+NumPy kütüphanelerinde belli indeksteki elemanlar liste indekslemesiyle elde edilebilmektedir.
+
+.. code-block:: python
+
+    import pandas as pd
+
+    from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+    from sklearn.naive_bayes import MultinomialNB
+    from sklearn.pipeline import Pipeline
+
+    df = pd.read_csv('../Data/turkish_movie_sentiment_labeled.csv')
+
+    def turkish_lowercase(text):
+        return text.replace('İ', 'i').replace('I', 'ı').lower()
+
+    pl1 = Pipeline(
+        [
+            ('CountVectorizer', CountVectorizer(preprocessor=turkish_lowercase, lowercase=False)),
+            ('MultinomialNB', MultinomialNB())
+        ])
+
+    pl2 = Pipeline(
+        [
+            ('CountVectorizer', CountVectorizer(preprocessor=turkish_lowercase, lowercase=False, binary=True)),
+            ('MultinomialNB', MultinomialNB())
+        ])
+
+    pl3 = Pipeline(
+        [
+            ('TfidfVectorizer', TfidfVectorizer(preprocessor=turkish_lowercase, lowercase=False)),
+            ('MultinomialNB', MultinomialNB())
+        ])
+
+
+    from sklearn.model_selection import KFold
+    from sklearn.metrics import accuracy_score
+
+    kfold = KFold(n_splits=10, shuffle=True)
+
+    accuracy1_list = []
+    accuracy2_list = []
+    accuracy3_list = []
+
+    for train_indices, val_indices in kfold.split(df):
+        training_dataset_x = df.iloc[train_indices]['comment']
+        training_dataset_y = df.iloc[train_indices]['label']
+
+        pl1.fit(training_dataset_x, training_dataset_y)
+        pl2.fit(training_dataset_x, training_dataset_y)
+        pl3.fit(training_dataset_x, training_dataset_y)
+
+        validation_dataset_x =  df.iloc[val_indices]['comment']
+        validation_dataset_y = df.iloc[val_indices]['label']
+
+        predict_result1 = pl1.predict(validation_dataset_x)
+        predict_result2 = pl2.predict(validation_dataset_x)
+        predict_result3 = pl3.predict(validation_dataset_x)
+
+        accuracy1 = accuracy_score(validation_dataset_y, predict_result1)
+        accuracy2 = accuracy_score(validation_dataset_y, predict_result2)
+        accuracy3 = accuracy_score(validation_dataset_y, predict_result3)
+
+        accuracy1_list.append(accuracy1)
+        accuracy2_list.append(accuracy2)
+        accuracy3_list.append(accuracy3)
+
+    import numpy as np
+
+    mean1_accuracy = np.mean(accuracy1_list)
+    mean2_accuracy = np.mean(accuracy2_list)
+    mean3_accuracy = np.mean(accuracy3_list)
+
+    print(f'Mean Accuracy 1: {mean1_accuracy}')
+    print(f'Mean Accuracy 2: {mean2_accuracy}')
+    print(f'Mean Accuracy 3: {mean3_accuracy}')
+
+cross_val_score Fonksiyonu
+--------------------------
+
+Aslında scikit-learn kütüphanesinde yukarıdaki işlemlerin hepsini yapan ``cross_val_score`` isimli bir fonksiyon
+da bulunmaktadır. Fonksiyonun parametrik yapısı şöyledir:
+
+.. code-block:: python
+
+    sklearn.model_selection.cross_val_score(estimator, X, y=None, *, groups=None, scoring=None, cv=None,
+            n_jobs=None, verbose=0, params=None, pre_dispatch='2*n_jobs', error_score=nan)
+
+Fonksiyonun birinci parametresi tahminleyici nesnesini, ikinci parametresi x değerlerini, üçüncü parametresi ise y
+değerlerini almaktadır. Fonksiyonun ``cv`` parametresine parça sayısını belirten K değeri girilebilir. Default
+durumda bu değer 5 olarak alınmaktadır. Fonksiyon bize her parçanın performans değerini (score değerini) bir NumPy
+dizisi olarak vermektedir. Fonksiyonun ``scoring`` parametresi hesaplanacak skorun ne olduğunu belirtmektedir. Biz
+buraya scikit-learn metrik isimlerini girebiliriz. Örneğin sınıflandırma problemleri için bu parametre *accuracy*
+biçiminde, regresyon problemleri için ise *neg_mean_squared_error* biçiminde girilebilir. Tabii bu parametre
+aslında genellikle girilmez. Bu durumda fonksiyonun birinci parametresinde belirtilen tahminleyicinin varsa
+``score`` fonksiyonu kullanılmaktadır. Fonksiyon veri kümesini kendi içerisinde karıştırmaz. Bunu gerekiyorsa
+programcı yapmalıdır. Aslında fonksiyonun ``cv`` parametresi bir sayı yerine doğrudan ``KFold``,
+``StratifiedKFold`` gibi bölücü nesnelerini de kabul etmektedir. Yani alternatif olarak bu bölücü nesnelerini
+``shuffle=True`` parametresiyle oluşturup fonksiyonun ``cv`` parametresine de girebiliriz. Örneğin:
+
+.. code-block:: python
+
+    from sklearn.model_selection import cross_val_score
+
+    accuracy1_scores = cross_val_score(pl1, df['comment'], df['label'], scoring='accuracy', cv=10)
+    accuracy2_scores = cross_val_score(pl2, df['comment'], df['label'], scoring='accuracy', cv=10)
+    accuracy3_scores = cross_val_score(pl3, df['comment'], df['label'], scoring='accuracy', cv=10)
+
+    print(f'Mean Accuracy 1: {np.mean(accuracy1_scores)}')
+    print(f'Mean Accuracy 2: {np.mean(accuracy2_scores)}')
+    print(f'Mean Accuracy 3: {np.mean(accuracy3_scores)}')
+
+Aşağıda örnek bir bütün olarak verilmiştir.
+
+.. code-block:: python
+
+    import pandas as pd
+
+    from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+    from sklearn.naive_bayes import MultinomialNB
+    from sklearn.pipeline import Pipeline
+
+    df = pd.read_csv('../Data/turkish_movie_sentiment_labeled.csv').sample(frac=1)
+
+    def turkish_lowercase(text):
+        return text.replace('İ', 'i').replace('I', 'ı').lower()
+
+    pl1 = Pipeline(
+        [
+            ('CountVectorizer', CountVectorizer(preprocessor=turkish_lowercase, lowercase=False)),
+            ('MultinomialNB', MultinomialNB())
+        ])
+
+    pl2 = Pipeline(
+        [
+            ('CountVectorizer', CountVectorizer(preprocessor=turkish_lowercase, lowercase=False, binary=True)),
+            ('MultinomialNB', MultinomialNB())
+        ])
+
+    pl3 = Pipeline(
+        [
+            ('TfidfVectorizer', TfidfVectorizer(preprocessor=turkish_lowercase, lowercase=False)),
+            ('MultinomialNB', MultinomialNB())
+        ])
+
+
+    from sklearn.model_selection import StratifiedKFold
+    from sklearn.metrics import accuracy_score
+
+    kfold = StratifiedKFold(n_splits=10, shuffle=False)
+
+    accuracy1_list = []
+    accuracy2_list = []
+    accuracy3_list = []
+
+    for train_indices, val_indices in kfold.split(df['comment'], df['label']):
+        training_dataset_x = df.iloc[train_indices]['comment']
+        training_dataset_y = df.iloc[train_indices]['label']
+
+        pl1.fit(training_dataset_x, training_dataset_y)
+        pl2.fit(training_dataset_x, training_dataset_y)
+        pl3.fit(training_dataset_x, training_dataset_y)
+
+        validation_dataset_x =  df.iloc[val_indices]['comment']
+        validation_dataset_y = df.iloc[val_indices]['label']
+
+        predict_result1 = pl1.predict(validation_dataset_x)
+        predict_result2 = pl2.predict(validation_dataset_x)
+        predict_result3 = pl3.predict(validation_dataset_x)
+
+        accuracy1 = accuracy_score(validation_dataset_y, predict_result1)
+        accuracy2 = accuracy_score(validation_dataset_y, predict_result2)
+        accuracy3 = accuracy_score(validation_dataset_y, predict_result3)
+
+        accuracy1_list.append(accuracy1)
+        accuracy2_list.append(accuracy2)
+        accuracy3_list.append(accuracy3)
+
+    import numpy as np
+
+    mean1_accuracy = np.mean(accuracy1_list)
+    mean2_accuracy = np.mean(accuracy2_list)
+    mean3_accuracy = np.mean(accuracy3_list)
+
+    print(f'Mean Accuracy 1: {mean1_accuracy}')
+    print(f'Mean Accuracy 2: {mean2_accuracy}')
+    print(f'Mean Accuracy 3: {mean3_accuracy}')
+
+    print('-' * 20)
+
+    from sklearn.model_selection import cross_val_score
+
+    accuracy1_scores = cross_val_score(pl1, df['comment'], df['label'], scoring='accuracy', cv=10)
+    accuracy2_scores = cross_val_score(pl2, df['comment'], df['label'], scoring='accuracy', cv=10)
+    accuracy3_scores = cross_val_score(pl3, df['comment'], df['label'], scoring='accuracy', cv=10)
+
+    print(f'Mean Accuracy 1: {np.mean(accuracy1_scores)}')
+    print(f'Mean Accuracy 2: {np.mean(accuracy2_scores)}')
+    print(f'Mean Accuracy 3: {np.mean(accuracy3_scores)}')
+
+cross_val_score Fonksiyonunda cv Parametresine Nesne Girilmesi
+--------------------------------------------------------------
+
+Biz yukarıda scikit-learn kütüphanesinde K-Fold işlemlerini otomatik yapan ``cross_val_score`` fonksiyonunu da
+görmüştük. İşte bu fonksiyon sınıflandırma için oluşturulan veri kümelerinde default durumda tabakalı işlem
+yapmaktadır. Yani bu fonksiyonu yazanlar default olarak tahminleyiciye bakıp eğer tahminleyici regresyon amacıyla
+kullanılan bir tahminleyici ise ``KFold`` sınıfını, sınıflandırma amacıyla kullanılan bir tahminleyici ise
+``StratifiedKFold`` sınıfını kullanmıştır. Ancak fonksiyonun ``cv`` parametresi ile bu durum manuel olarak da
+ayarlanabilmektedir. Anımsanacağı gibi fonksiyonun ``cv`` parametresi K değerini belirtiyordu. İşte bu parametreye
+bir K değeri girmek yerine sınıf türünden nesne de girebiliriz. Örneğin:
+
+.. code-block:: python
+
+    kf = KFold(n_splits=5, shuffle=True, random_state=12345)
+
+    scores = cross_val_score(model, dataset.x, dataset.y, cv=kf)
+
+Lojistik Regresyona Giriş: Ölçekler, Regresyon Türleri ve Matematiksel Temel
+============================================================================
+
+Regresyon ve Ölçek Kavramına Giriş
+----------------------------------
+
+Şimdi de klasik doğal dil işlemede kullanılan ve ismine *lojistik regresyon (logistic regression)* ya da *logit
+regresyonu* denilen yöntemi ele alacağız. Ancak önce *regresyon* kavramı hakkında bazı temel bilgileri vermek
+istiyoruz.
+
+İstatistiksel Ölçek Türleri
+---------------------------
+
+İstatistikte ölçülen ya da ölçülmüş olan değerlerin sınıflarına genel olarak *ölçek (scale)* denilmektedir. Pek
+çok kişi ölçeklerin yalnızca sayısal olduğunu sanmaktadır. Halbuki ölçekler başka biçimlerde de karşımıza
+çıkabilmektedir. İstatistikte ölçekler tipik olarak dört sınıfa ayrılmaktadır:
+
+**Kategorik (Nominal) Ölçekler**: Bu ölçeklerde söz konusu kümenin elemanları kategorik olgulardır. Örneğin
+cinsiyet, renk, coğrafi bölge gibi. Bu ölçekteki ölçülen ya da ifade edilen değerlerin sayısal karşılıkları
+yoktur. Örneğin *kadınlarla erkekler arasında sigara içme miktarı arasında anlamlı bir fark olup olmadığını*
+anlamak için gerçekleştirilen bir araştırmada ölçülmesi istenen değişkenlerden *cinsiyet* kategorik (nominal) bir
+ölçeğe ilişkindir. Benzer biçimde kişilerin renk tercihleriyle ilgili bir araştırmada renkler (siyah, beyaz,
+kırmızı gibi) kategorik bir ölçekle ifade edilirler. Kategorik ölçekteki değerleri 0'dan itibaren sayılarla da
+ifade edebiliriz. Bu durum ölçeğin türünü değiştirmemektedir. Kategorik ölçekteki değerler tüm gerçek değerleri
+değil yalnızca belirli değerleri alabilmektedir.
+
+**Sırasal (Ordinal) Ölçekler**: Bu ölçeklerdeki değerler de birer kategori belirtmekle birlikte bu kategoriler
+arasında büyüklük küçüklük ilişkisi söz konusudur. Örneğin eğitim durumu için kategorik değerler *ilköğretim*,
+*lise*, *üniversite* olabilir ve bunlar arasında sıra ilişkisi vardır. Bu nedenle *eğitim durumu* bir sıralı
+ölçek belirtmektedir.
+
+**Aralıklı (Interval) Ölçekler**: Aralıklı ölçekler sayısal bilgi içerirler. Bu tür ölçeklerde iki puan
+arasındaki fark aynı miktar uzaklığı ya da yakınlığı ifade eder. Örneğin bir testte 20 puan alan 10 puan alandan
+belli miktarda daha iyidir. 30 puan alan da 20 puan alandan aynı miktar kadar daha iyidir. Bu tür ölçeklerde
+mutlak sıfır noktası yoktur. Başka bir deyişle bu tür ölçeklerde sıfır *yokluğu* ya da *mevcut olmamayı*
+belirtmemektedir. Alınan puanlar her zaman belli bir göreli orijine göre anlamlıdır. Örneğin aslında sınavlardan
+alınan puanlar böyle bir ölçek türündedir. Sınavdan sıfır alınabilir. Ancak bu sıfır o kişinin o konu hakkında
+hiçbir şey bilmediği anlamına gelmez. Yani mutlak sıfır değildir. Ya da örneğin ısı belirten *derece (celsius)*
+bir aralıklı ölçeği belirtmektedir. 50 derece ile 40 derece arasındaki ısı farkı 40 derece ile 30 derece
+arasındaki fark kadardır ancak sıfır derece ısının olmadığı anlamına gelmez. Aralıklı ölçeklerde oran oluşturmak
+anlamlı olmayabilir. Örneğin 20 derecelik ısı ile 10 derecelik ısı arasında iki kat bir oran vardır. Ancak biz 20
+derecenin 10 dereceden iki kat daha sıcağı belirttiğini söyleyemeyiz.
+
+**Oransal (Ratio) Ölçekler**: Bu ölçekler de sayısal bilgi içerirler. Oransal ölçekler aralık ölçeklerin tüm
+özelliklerine sahiptirler. Ancak ek olarak oransal ölçeklerde mutlak bir sıfır noktası da vardır. Dolayısıyla
+puanlar arasındaki oranlar mutlak olarak anlamlıdır. Örneğin uzunluk, kütle gibi temel fiziksel özellikler
+oransal ölçek türlerindendir. Bir nesnenin uzunluğunun sıfır olması onun uzunluğunun olmadığı, kütlesinin sıfır
+olması da onun kütlesinin olmadığı anlamına gelmektedir. Örneğin kişinin yaşı da oransal bir ölçek belirtir.
+
+Doğal dil işlemedeki atomlar (örneğin tipik olarak sözcükler) kategorik ölçeğe ilişkindir. Ancak biz onları
+``CountVectorizer`` ya da ``TfIdfVectorizer`` işlemlerine soktuğumuzda artık oransal ölçeğe ilişkin bilgiler elde
+ederiz. Sınıflandırma problemlerindeki Y değerleri kategorik ölçeğe ilişkin değerlerdir.
+
+Regresyon Kavramı ve Regresyon Türleri
+--------------------------------------
+
+İstatistikte girdi ile çıktı arasında ilişki kurma sürecine *regresyon (regression)* denilmektedir. Girdiyle
+çıktı arasındaki ilişki bir fonksiyonla ifade edilebildiğine göre regresyon sürecini de biz aslında girdi ile
+çıktı arasındaki ilişkiyi belirten uygun bir fonksiyonun bulunması süreci olarak da ele alabiliriz. Matematiksel
+biçimde açıklarsak regresyon aslında y = f(x) biçiminde bir f fonksiyonunun bulunması sürecidir. Burada x ve y
+birden fazla değişkeni temsil ediyor olabilir. (Yani x bir tane değil x0, x1, ... xn biçiminde n tane olabileceği
+gibi y de bir tane değil y0, y1, ... ym biçiminde m tane olabilir.) x değerlerinin birden fazla olduğu
+fonksiyonlara matematikte *çok değişkenli fonksiyonlar* denildiğini anımsayınız.
+
+Peki girdi ile çıktı arasında ilişki kurmanın amacı ne olabilir? Şüphesiz en önemli amaç kestirimde bulunmaktır.
+Örneğin elimizde birtakım geçmiş veriler vardır. Biz de gelecekteki durumun ne olabileceğiyle ilgili karar vermek
+isteyebiliriz. Bu durumda gelecekteki verileri regresyon sonucunda bulduğumuz f fonksiyonuna girdi yaparak
+sonucu kestirebiliriz.
+
+Regresyon modelleri ve problemleri istatistikte çeşitli biçimlerde sınıflandırılabilmektedir. Maalesef herkesin
+hemfikir olduğu bir sınıflandırma biçimi yoktur. Biz burada istatistiksel regresyon modellerini tipik olarak
+aşağıdaki gibi sınıflandıracağız:
+
+**Doğrusal Regresyon (Linear Regression)**: Girdi ile çıktı arasındaki ilişkiyi parametrelerin doğrusal
+bileşimleriyle ifade eden regresyon modelidir. Yani doğrusal regresyonla girdi ile çıktı arasında ilişkiyi
+belirten doğrusal bir fonksiyon bulunmaya çalışılır. Doğrusal regresyonda girdi (yani bağımsız değişken) bir tane
+ve çıktı da (bağımlı değişken) bir tane ise buna *basit doğrusal regresyon* denilmektedir. Tabii gerçek yaşama
+ilişkin problemlerde genellikle girdi bir tane olmaz. Örneğin bizim kullandığımız veri kümelerindeki özellikler
+(sütunlar) girdileri oluştururlar. Böylece regresyon modelinde çok sayıda girdi söz konusu olur. İşte eğer
+doğrusal regresyonda girdiler (yani bağımsız değişkenler) birden fazla ise buna *çoklu doğrusal regresyon
+(multiple linear regression)* denilmektedir. Doğrusallığın değişken sayısı ile ilgili olmadığına, değişkenlerin
+dereceleri ile ilgili olduğuna dikkat ediniz. Örneğin n tane değişken içeren doğrusal bir fonksiyonun genel
+biçimi şöyledir:
+
+::
+
+    f(x) = a₁x₁ + a₂x₂ + a₃x₃ + ... + aₙxₙ + b
+
+Biz bu doğrusal fonksiyonu vektörel biçimde şöyle de ifade edebiliriz:
+
+::
+
+    f(X) = AX + b
+
+Burada A bir satır vektörünü X ise bir sütun vektörünü belirtmektedir. Aslında AX işlemi bir *dot product*
+oluşturmaktadır. İki vektörün karşılıklı elemanlarının çarpımlarının toplamına *dot product* denilmektedir.
+
+**Polinomsal Regresyon (Polynomial Regression)**: Verilerin grafiğini çizdiğimizde ilişkinin doğrusal olup
+olmadığı hemen gözle görülebilmektedir. Bağımsız değişkenlerin herhangi birinin üssü 1'den büyükse bu tür
+regresyon modellerine polinomsal regresyon modelleri denilmektedir. Başka bir deyişle polinomsal regresyon
+aşağıdaki gibi bir polinomsal fonksiyonun bulunması sürecidir:
+
+::
+
+    f(x) = a₀x⁰ + a₁x¹ + a₂x² + ... + aₙxⁿ
+
+Aslında polinomsal regresyon eğer katsayılarla değişkenler yer değiştirirse doğrusal regresyona benzemektedir:
+
+::
+
+    f(a) = x⁰a₀ + x¹a₁ + x²a₂ + ... + xⁿaₙ
+
+Gerçekten de polinomsal regresyonlar aslında doğrusal regresyona dönüştürülerek çözülmektedir. Bu nedenle
+polinomsal regresyonlar aslında bir çeşit doğrusal regresyon olarak ele alınmaktadır.
+
+**Doğrusal Olmayan Regresyon (Nonlinear Regression)**: Her ne kadar polinomlar doğrusal fonksiyonlar değilse de
+katsayılarla değişkenler yer değiştirdiğinde doğrusal gibi ele alınabilmektedir. İstatistikte doğrusal olmayan
+regresyon denildiğinde katsayılarla değişkenler değiştirildiğinde yine doğrusal olmayan fonksiyonların elde
+edildiği regresyonlar anlaşılmaktadır. Bu tür fonksiyonlar genel olarak üstel ifadeler, logaritmik ifadeler, pay
+ve paydasında bağımsız değişkenlerin bulunduğu oransal ifadeler içermektedir. Örneğin:
+
+::
+
+    f(x) = aeᵇˣ
+
+**Lojistik Regresyon (Logistic/Logit Regression)**: Bağımlı değişkenin sürekli bir değer almadığı, kategorik
+değer aldığı durumlarda uygulanan regresyonlara lojistik regresyon ya da logit regresyonu denilmektedir. Lojistik
+regresyon terimi tipik olarak çıktının 0 ya da 1 gibi ikili değerlere sahip olduğu durumlar için kullanılmaktadır.
+(Örneğin çıktı *evli mi bekar mı*, *hasta mı sağlıklı mı*, *film iyi mi kötü mü* gibi iki seçenekten biri
+olabilmektedir.) Ancak zamanla bu terim genişletilmiştir. Çıktının ikiden fazla kategoriye ayrıldığı durumlar
+için de *çok sınıflı lojistik regresyon (multinomial logistic regression)* terimi kullanılmaktadır. Ayrıca
+*sıralı lojistik regresyon (ordinal logistic regression)* denilen bir lojistik regresyon modelinde girdi ve
+çıktılar kategorik değil sıralı ölçeklere ilişkin olabilmektedir.
+
+Regresyonlar bağımlı ve bağımsız değişken sayılarına göre de sınıflandırılmaktadır:
+
+**Basit Regresyon (Simple Regression)**: Bağımsız değişken sayısı bir tane ise böyle regresyonlara basit
+regresyonlar denilmektedir.
+
+**Çoklu Regresyon (Multiple Regression)**: Bağımsız değişken sayısının (yani girdilerin) birden fazla olduğu
+fakat bağımlı değişken sayısının (yani çıktının) bir tane olduğu regresyon modelleri için kullanılan bir
+terimdir. Örneğin bir otomobilin 8 özelliğinden onun yakıt harcamasının tahmin edilmek istendiği regresyon modeli
+çoklu regresyon modelidir. Ya da örneğin kişinin 8 biyomedikal bilgisinden hareketle onun şeker hastası olup
+olmadığının tahmin edilmesi için oluşturulan model de çoklu lojistik regresyon modelidir. Makine öğrenmesinde
+hemen her zaman çoklu regresyonlarla çalışılmaktadır.
+
+**Çok Değişkenli Regresyon (Multivariate Regression)**: Eğer regresyon modelinde bağımlı değişkenin sayısı
+birden fazlaysa (yani çıktı birden fazlaysa) buna da *çok değişkenli (multivariate)* regresyon denilmektedir.
+Örneğin öğrencinin bazı girdi bilgileri olsun (bağımsız değişkenler) biz de onun sınavda alacağı notu ve ortalama
+kaç saat uyuduğunu tahmin etmek isteyelim. Burada tahmin etmek istediğimiz şey birden fazladır. Şüphesiz çok
+değişkenli regresyonlarda çıktılar birbirlerinden bağımsız ve teker teker olarak da ele alınabilirler. O zaman
+iki farklı çoklu regresyondan söz ederdik. Fakat çok değişkenli regresyonlarda aynı anda birden fazla çıktının
+değişiminin belirlenmesi hedeflenmektedir. Yani örneğin 15 tane biyomedikal tetkike bakarak biz bir kişinin
+*diyabetli olup olmadığını*, *kalp hastası olup olmadığını*, *hipertansiyonunun olup olmadığını* ayrı ayrı çoklu
+lojistik regresyonla anlamaya çalışabiliriz. Ancak bu üç hastalık birbirlerini de etkiliyor olabilir. O halde bu
+üç hastalığın birlikte değerlendirilmesi gerekir. İşte bu durum çok değişkenli lojistik regresyon olarak
+modellenebilir.
+
+Kapalı Çözüm ve Nümerik Yöntemler
+---------------------------------
+
+Matematik problemler temelde iki biçimde çözülebilmektedir:
+
+1) Kapalı biçimde (closed form). Buna *sembolik biçim (symbolic form)* de denilmektedir.
+2) Nümerik yöntemlerle
+
+Bir denklemin ya da problemin kapalı çözümü sembollerle formülsel çözümünü belirtmektedir. Örneğin ikinci derece
+denklem değerler yerine konulduğunda sonucu veren bir formülle kapalı biçimde çözülebilmektedir. Ancak maalesef
+her türlü problem için kapalı çözüm oluşturulamamaktadır. Örneğin beşinci ve yüksek derecelerdeki denklemlerin
+kapalı çözümleri yoktur. Pek çok optimizasyon probleminin kapalı çözümü bulunmamaktadır. Örneğin çoklu doğrusal
+regresyon için kapalı çözüm mevcutken, lojistik regresyon için bir kapalı çözüm mevcut değildir.
+
+Nümerik yöntemlerde problem bir döngü içerisinde hedefe gittikçe yaklaşılarak çözülmektedir. Örneğin biz bu
+sayede yüksek dereceli denklemlerin çözümlerini yapabilmekteyiz. Lojistik regresyon problemleri de ancak iteratif
+biçimde nümerik yöntemlerle çözülebilmektedir. Kapalı çözümü bulunmayan bazı problemler şunlardır:
+
+.. list-table:: Kapalı Çözümü Bulunmayan Bazı Problemler
+   :header-rows: 1
+   :widths: 20 40 40
+
+   * - Kategori
+     - Problem
+     - Kullanılan Nümerik Yöntem
+   * - Cebir
+     - 5. derece ve üzeri polinom denklemleri
+     - Newton-Raphson vb. sayısal yöntemler
+   * - Cebir
+     - Transandantal denklemler (x = cos(x))
+     - Sayısal yöntemler, Lambert W
+   * - İntegral
+     - ∫ e^(-x²) dx (Gauss integrali)
+     - erf özel fonksiyonu, z tabloları
+   * - İntegral
+     - ∫ sin(x)/x dx (sinüs integrali)
+     - Si özel fonksiyonu
+   * - İntegral
+     - ∫ 1/ln(x) dx (logaritmik integral)
+     - li özel fonksiyonu
+   * - İntegral
+     - Elips çevresinin hesabı
+     - Eliptik integraller, Ramanujan formülü
+   * - Diferansiyel Denklem
+     - Üç cisim problemi
+     - Sayısal simülasyon
+   * - Diferansiyel Denklem
+     - Navier-Stokes denklemleri
+     - Sayısal çözüm (CFD)
+   * - Diferansiyel Denklem
+     - Tam sarkaç denklemi
+     - Eliptik fonksiyonlar, küçük açı yaklaşımı
+   * - Optimizasyon / ML
+     - Lojistik regresyon (MLE)
+     - Gradient descent, Newton yöntemi
+   * - Optimizasyon / ML
+     - Yapay sinir ağı eğitimi
+     - SGD, Adam gibi iteratif yöntemler
+   * - Optimizasyon / ML
+     - k-means global optimum
+     - Lloyd algoritması (yerel optimum)
+   * - Gök Mekaniği
+     - Kepler denklemi (M = E - e·sin(E))
+     - Sayısal iterasyon
+
+Regresyon ve Sınıflandırma Problemleri Arasındaki Fark
+------------------------------------------------------
+
+Makine öğrenmesi bağlamında *regresyon problemleri* denildiğinde genel olarak Y değerlerinin kategorik değil
+sayısal olduğu regresyonlar kastedilmektedir. Eğer Y değerleri bir sayı değil de bir kategori belirtiyorsa
+bunlara da *sınıflandırma problemleri* denilmektedir. Dolayısıyla makine öğrenmesinde lojistik regresyon
+sınıflandırma problemlerini çözmek için kullanılan yöntemlerden biridir.
+
+Doğru, Düzlem ve Hiper Düzlem Kavramları
+----------------------------------------
+
+Doğru (line) iki boyutlu uzay için kullanılan bir terimdir. Örneğin:
+
+::
+
+    y = ax + b
+
+Bu fonksiyonun grafiği çizilirse iki boyutlu uzayda bir doğru elde edilir. Üç boyutlu uzayın doğrusu bir
+düzlemdir. Örneğin:
+
+::
+
+    y = ax1 + bx2 + c
+
+Bu fonksiyonun üç boyutlu uzayda grafiği çizilirse bir düzlem (plane) elde edilir. İşte genel olarak n boyutlu
+uzayda bir uzayın da düzlemi vardır. Ona *hiper düzlem* ya da İngilizce *hyperplane* denilmektedir. İki boyutlu
+uzaydaki doğrular için yapılan tüm çözümler n boyutlu uzaydaki hiper düzlemler için geçerlidir. Bu nedenle
+basitlik için örnekler iki boyutlu kartezyen koordinat sistemlerinde veriliyorsa da aslında çözüm n boyutlu uzaya
+da genellenebilmektedir.
+
+Doğrusal Sınıflandırıcılar
+--------------------------
+
+Makine öğrenmesinde bir grup sınıflandırıcıya (yani sınıflandırma yöntemine) *doğrusal sınıflandırıcılar (linear
+classifiers)* denilmektedir. Doğrusal sınıflandırıcı hiper düzlemler kullanılarak sınıflandırma yapmaktadır.
+Makine öğrenmesinde kullanılan en önemli iki doğrusal sınıflandırıcı şunlardır:
+
+1) Lojistik regresyon (logistic regression)
+2) Destek vektör makineleri (support vector machines)
+
+Aşağıda doğrusal sınıflandırıcıları bir tablo halinde veriyoruz:
+
+.. list-table:: Doğrusal Sınıflandırıcılar
+   :header-rows: 1
+   :widths: 25 40 35
+
+   * - Sınıflandırıcı
+     - Temel Yaklaşım
+     - Not
+   * - Lojistik Regresyon
+     - Sigmoid ile olasılık üretimi
+     - Log-loss minimize edilir
+   * - Doğrusal SVM
+     - Marjin maksimizasyonu
+     - Hinge loss kullanır
+   * - Perceptron
+     - İşaret tabanlı karar
+     - En eski doğrusal modeldir
+   * - Multinomial NB
+     - Olasılıksal (log-uzayında doğrusal)
+     - Metin sınıflandırmada güçlüdür
+   * - Bernoulli NB
+     - Olasılıksal (log-uzayında doğrusal)
+     - İkili özelliklerle çalışır
+   * - LDA
+     - Ortak kovaryanslı Gauss varsayımı
+     - QDA doğrusal değildir
+   * - Ridge Sınıflandırıcı
+     - L2 düzenlileştirmeli en küçük kareler
+     - Hızlı ve kararlıdır
+   * - SGDClassifier
+     - Stokastik gradient descent
+     - loss parametresine göre değişir
+
+Bu doğrusal sınıflandırıcıların hepsi için scikit-learn kütüphanesinde sınıflar bulundurulmuştur:
+
+.. list-table:: scikit-learn Sınıflandırıcı Sınıfları
+   :header-rows: 1
+   :widths: 30 30
+
+   * - Sınıflandırıcı
+     - scikit-learn Sınıfı
+   * - Lojistik Regresyon
+     - ``LogisticRegression``
+   * - Doğrusal SVM
+     - ``LinearSVC``
+   * - Perceptron
+     - ``Perceptron``
+   * - Multinomial NB
+     - ``MultinomialNB``
+   * - Bernoulli NB
+     - ``BernoulliNB``
+   * - LDA
+     - ``LinearDiscriminantAnalysis``
+   * - Ridge Sınıflandırıcı
+     - ``RidgeClassifier``
+   * - SGDClassifier
+     - ``SGDClassifier``
+
+Çoklu doğrusal regresyon makine öğrenmesinde en çok kullanılan yöntemlerden biri olduğu halde klasik doğal dil
+işlemede neredeyse hiç kullanılmamaktadır. Klasik doğal dil işlemede lojistik regresyon oldukça yaygın kullanılan
+bir tekniktir.
+
+Lojistik Regresyonun Matematiksel Temeli: Sigmoid ve Odds Ratio
+---------------------------------------------------------------
+
+İstatistiksel lojistik regresyonun anlaşılması biraz zor olabilmektedir. Biz burada bu yöntemin adım adım nasıl
+uygulandığını açıklayacağız. Lojistik regresyonda aslında yine bir doğru denkleminin bulunması hedeflenir. Yani
+bu bakımdan biraz doğrusal regresyona benzemektedir. Ancak belli bir noktanın x değerlerinin 1 olma olasılığı x
+değerlerinin bu doğru denklemine sokulmasıyla elde edilmez. Çünkü doğru denklemleri 0 ile 1 arasında bir değer
+vermemektedir. İşte belli bir noktaya ilişkin x değerlerinin 1 olma olasılığına dönüştürülmesi, bu x
+değerlerinin doğru denklemine sokulup oradan elde edilen değerin sigmoid fonksiyonuna sokulmasıyla elde
+edilmektedir. Bizim WX + b biçiminde bir doğru denklemini bir biçimde elde etmiş olduğumuzu düşünelim. (Buradaki
+W ve X bir vektördür dolayısıyla buradaki WX + b aslında N değişkenli genel bir doğru denklemini
+belirtmektedir.) İşte eğer bizim elimizde böyle bir doğru denklemi varsa bir noktaya ilişkin X değerlerinin 1
+olma olasılığı şöyle elde edilecektir:
+
+::
+
+    p(x) = 1 / (1 + e^-(WX + b))
+
+Bu aslında X noktasına ilişkin değerlerin sigmoid fonksiyonuna sokulmasıyla elde edilen değerdir. Sigmoid
+fonksiyonunun 0 ile 1 arasında bir değer verdiğini anımsayınız. Tabii buradaki asıl sorun böyle bir doğru
+denkleminin nasıl elde edileceğidir. Bunu izleyen paragraflarda açıklayacağız. Ancak yukarıdaki eşitlikte WX + b
+değerini (yani noktaya ilişkin x değerlerinin doğru denklemine sokulmasıyla elde edilen değeri) içler dışlar
+çarpımıyla yalnız bırakmaya çalışalım:
+
+::
+
+    p(x) * (1 + e^-(WX + b)) = 1
+    (1 + e^-(WX + b)) = 1 / p(x)
+    e^-(WX + b) = (1 - p(x))/p(x)
+
+Her iki tarafın logaritmasını alalım:
+
+::
+
+    log(e^-(WX + b)) = log((1 - p(x))/p(x))
+    -(WX + b) = log((1 - p(x))/p(x))
+    WX + b = -log((1 - p(x))/p(x))
+    WX + b = log(p(x) / (1 - p(x)))
+
+Buradan ilginç bir sonuç çıkmaktadır. Eğer biz böyle bir doğru denklemi bulursak aslında noktaya ilişkin x
+değerlerini bu doğru denkleminde yerine koyduğumuzda x'e ilişkin *odds ratio* değerinin logaritmasını elde
+ederiz. İşte lojistik regresyonda *odds ratio* değerinin logaritmasına *logit* de denilmektedir. Aslında lojistik
+regresyondaki *log* önekinin kaynağı da buradaki logaritma işlemidir.
+
+Maximum Likelihood Yöntemi ile Amaç Fonksiyonunun Elde Edilmesi
+---------------------------------------------------------------
+
+Peki WX + b doğru denklemi nasıl elde edilmektedir? Biz yukarıda bunun elde edilmiş olduğunu varsaydık. İşte bu
+doğru denklemi aslında toplam olasılıkların maksimizasyonu ya da bunun negatifinin minimizasyonu yoluyla
+oluşturulmaktadır. Toplam olasılıkların maksimize edilmesine istatistikte *maximum likelihood* yöntemi
+denilmektedir. Bu yöntemi açıklamadan önce sigmoid fonksiyonunu yeniden vermek istiyoruz:
+
+::
+
+    p(x) = 1 / (1 + e^-(WX + b))
+
+Biz noktalara ilişkin x değerlerini bu fonksiyona sokup p(x) değerleri elde ediyoruz. Bu p(x) değerlerinin de
+gerçek y değerleri olan 1 ya da 0'a ne kadar yakınsa bu doğru denkleminin o kadar iyi oluşturulacağını
+söyleyebiliriz. İşte tersten gidersek bizim amacımız yukarıdaki sigmoid çıktısı ile gerçek değerler arasındaki
+farkı minimize edecek doğru denkleminin bulunmasıdır. Örneğin bir nokta için p(x) değeri 0.8 olsun bu noktanın da
+gerçek sınıfı 1 olsun. Bu durumda biz bu p(x) değerini daha fazla 1'e yaklaştırmak isteriz. Örneğin bir nokta
+için p(x) değeri 0.2 olsun. Bu noktanın da gerçek sınıfı 0 olsun. Bu durumda biz bu p(x) değerini daha fazla 0'a
+yaklaştırmak isteriz. Tabii burada bir noktaya dikkat etmek gerekir. Örneğin biz yukarıdaki sigmoid çıktısından
+0.1 değeri elde etmiş olalım. Eğer bu noktanın gerçek y değeri 1 ise buradaki hata büyük olur ancak 0 ise
+buradaki hata küçük olur. O halde böyle bir amaç fonksiyonunu (ya da loss fonksiyonunu) maksimize ederken bu
+durumu dikkate almalıyız. İşte maksimize edilecek amaç fonksiyonu (yani loss fonksiyonu) aşağıdaki gibi
+oluşturulmaktadır:
+
+::
+
+    L(x) = ∏(p(x)^y * (1 - p(x))^(1 - y))
+
+Burada neden terimlerin çarpımının oluşturulduğunu izleyen paragrafta açıklayacağız. Bu fonksiyonda eğer y = 0
+ise çarpımın sağ tarafı 1, y = 1 ise çarpımın sol tarafı 1 olur. Buradaki çarpım ne kadar yükseltilirse elde
+edilecek doğru denklemi o kadar iyi olacaktır. Yukarıda da belirttiğimiz gibi lojistik regresyonun bu biçimde bir
+maksimizasyon problemi biçiminde çözülmesine istatistikte *maximum likelihood* yöntemi denilmektedir. Ancak
+makine öğrenmesinde biz genel olarak maksimizasyon yerine minimizasyon yapmayı tercih ederiz. Yukarıdaki
+fonksiyonun maksimize edilmesiyle onun negatifinin minimize edilmesi aynı anlama gelmektedir:
+
+::
+
+    L(x) = - ∏(p(x)^y * (1 - p(x))^(1 - y))
+
+Fonksiyonun başındaki negatif işlemi problemi maksimizasyon yerine minimizasyon haline getirmektedir. Yukarıdaki
+fonksiyonda üslü ifadelerden kurtulmak için fonksiyonun logaritmasını alabiliriz. Eğer f fonksiyonu her zaman
+pozitif değer veriyorsa ve üstel biçimdeyse (f∘g)(x) fonksiyonunun minimize edilmesiyle log(f∘g(x)) fonksiyonunun
+minimize edilmesi aynı g(x) değerlerini verecektir. Bu durumda işlemleri kolaylaştırmak için fonksiyonun
+logaritmasını alabiliriz:
+
+::
+
+    L(x) = - log(∏(1 - p(x))^(1 - y) * p(x)^y)
+
+Değerlerin çarpımlarının logaritması logaritmalarının toplamına eşittir:
+
+::
+
+    L(x) = -∑[(log((1 - p(x))^(1 - y))  + log(p(x)^y))]
+
+Logaritma işleminde üst başa düşürülebilir:
+
+::
+
+    L(x) = -∑[(1 - y) * log(1 - p(x)) + y * log(p(x))]
+
+Zaten bu da aslında daha önce görmüş olduğumuz *binary cross-entropy* loss fonksiyonu ile aynıdır. Eğer ortalama
+bir değer bulunmak isteniyorsa buradaki toplam değer noktaların sayısına bölünebilir. Böylece noktaların toplam
+sayısı N olmak üzere fonksiyon şu biçimde de ifade edilebilir:
+
+::
+
+    L(x) = -(1 / N) * ∑[(1 - y) * log(1 - p(x)) + y * log(p(x))]
+
+Tabii buradaki N sabit bir sayı olduğu için aslında minimizasyon işleminde genel olarak ihmal de edilebilmektedir.
+
+Yukarıdaki minimizasyon işlemi kapalı biçimde (sembolik biçimde) yapılamaz. Ancak nümerik yöntemlerle
+(*gradient descent* ya da *Newton-Raphson* gibi yöntemlerle) yapılabilir. Bu tür optimizasyonların nasıl yapıldığı
+izleyen paragraflarda ele alınacaktır.
+
+Maximum Likelihood ile Binary Cross-Entropy İlişkisi
+----------------------------------------------------
+
+Yukarıda da belirttiğimiz gibi WX + b doğru denkleminin elde edilmesi için kullanılan amaç fonksiyonuna
+istatistikte *maximum likelihood* denilmektedir. İsminden de anlaşılacağı gibi *maximum likelihood* yönteminde
+amaç fonksiyonu maksimizasyon için oluşturulmaktadır. Maximum likelihood amaç fonksiyonunun dayandığı fikir veri
+kümesindeki satırların olasılıklarının çarpımının en büyüklenmesidir. Satırların istatistiksel olarak bağımsız
+olduğunu varsayarsak satırların sigmoid çıktılarının çarpımı aslında toplam veri kümesinin olasılığını
+vermektedir. (İstatistiksel bağımsız olayların birlikte gerçekleşme olasılığının onların gerçekleşme
+olasılıklarının çarpımına eşit olduğunu anımsayınız.) İşte bu olasılığın maksimize edilmesi de aslında kaybın
+minimize edilmesiyle aynı anlama gelmektedir. Önceki paragrafta da belirttiğimiz gibi maximum likelihood amaç
+fonksiyonu şöyle oluşturulmaktadır:
+
+::
+
+    ∏[p(x)^y * (1 - p(x))^(1-y)]
+
+Bu ifadenin logaritmasını alıp toplam nokta sayısına bölelim:
+
+::
+
+    (1 / N) * ∑[y * log(p(x)) + (1 - y) * log(1 - p(x))]
+
+Buradan da görüldüğü gibi maximum likelihood amaç fonksiyonu aslında binary cross-entropy fonksiyonunun
+pozitifidir. Bir fonksiyonun negatifinin minimize edilmesiyle pozitifinin maksimize edilmesi aynı anlamdadır.
+
+Lojistik Regresyonun Doğrusal Bir Sınıflandırıcı Olarak İspatı
+--------------------------------------------------------------
+
+Biz konuya girişte lojistik regresyon modelinin bir *doğrusal sınıflandırıcı (linear classifier)* olduğunu
+belirtmiştik. Yani bu model aynı zamanda bir hyperplane ile iki sınıfı birbirinden ayrıştırmaya çalışmaktadır.
+Şimdi bunun ispatını yapalım. WX + b doğru denkleminin aynı zamanda *odds ratio* değerinin logaritması olduğunu
+belirtmiştik:
+
+::
+
+    WX + b = log(p(x) / (1 - p(x)))
+
+Burada p(x) = 0.5 alırsak eşitlik şu hale gelir:
+
+::
+
+    WX + b = log(1)
+    WX + b = 0
+
+Bu durumda bizim elde ettiğimiz doğru denklemini 0'a eşitleyerek bir doğru (genel olarak hyperplane) çizersek
+aslında 0.5 olasılıkla noktaları ikiye ayırmış oluruz. Yukarıda kalanlar bir sınıf aşağıda kalanlar bir sınıf
+olur. Başka bir deyişle aslında lojistik regresyondan elde edilen doğru denklemi 0'a eşitlenirse bir doğrusal
+sınıflandırıcı haline gelmektedir. Örneğin x1 ve x2'den oluşan iki özellikli bir veri kümesi için ayırıcı doğru
+şöyle çizilecektir:
+
+::
+
+    b + w1x1 + w2x2 = 0
+    w2x2 = -b - w1x1
+    X2 = (-b - w1x1) / w2
+
+Burada biz x1'e değer vererek x2 değerlerini elde edip doğruyu çizebiliriz.
+
+Biz yukarıda lojistik regresyon doğrusunu matrisel biçimde WX + b ile temsil ettik. X'lerin katsayıları için
+makine öğrenmesinde W harfi sıkça kullanılmaktadır. Buradaki W harfi İngilizce *weights* sözcüğünden gelmektedir.
+b harfi ise *bias* sözcüğünden gelmektedir. Ancak istatistikte genellikle W harfi yerine β harfi tercih
+edilmektedir. Lineer cebirde genellikle bu tür katsayı matrisleri A harfiyle gösterilmektedir. Biz burada makine
+öğrenmesi bağlamında lojistik regresyonu kullanıyor olduğumuz için W harfini tercih ettik.
+
+scikit-learn ile Lojistik Regresyon Uygulaması
+==============================================
+
+LogisticRegression Sınıfının Temel Kullanımı
+--------------------------------------------
+
+Şimdi scikit-learn içerisinde hazır bulunan ``LogisticRegression`` sınıfının nasıl kullanıldığını bir örnekle
+açıklayalım. Elimizde iki sınıfla etiketlendirilmiş olan `lr.csv` isimli bir CSV dosyası olsun:
+
+.. code-block:: text
+
+    x1,x2,result
+    2,3,negative
+    1,4,negative
+    3,2,negative
+    4,5,negative
+    2,6,negative
+    5,3,negative
+    3,7,negative
+    1,2,negative
+    4,4,negative
+    2,5,negative
+    8,9,positive
+    9,7,positive
+    7,10,positive
+    10,8,positive
+    8,6,positive
+    9,9,positive
+    7,8,positive
+    10,11,positive
+    6,9,positive
+    8,10,positive
+
+Bizim önce bu CSV dosyasını okumamız gerekir. Okuma işlemleri için doğrudan NumPy kullanmak yerine genellikle
+Pandas tercih edilmektedir:
+
+.. code-block:: python
+
+    df = pd.read_csv('lr.csv')
+
+Buradan elde edilen DataFrame nesnesi şöyle olacaktır:
+
+.. code-block:: text
+
+        x1  x2    result
+    0    2   3  negative
+    1    1   4  negative
+    2    3   2  negative
+    3    4   5  negative
+    4    2   6  negative
+    5    5   3  negative
+    6    3   7  negative
+    7    1   2  negative
+    8    4   4  negative
+    9    2   5  negative
+    10   8   9  positive
+    11   9   7  positive
+    12   7  10  positive
+    13  10   8  positive
+    14   8   6  positive
+    15   9   9  positive
+    16   7   8  positive
+    17  10  11  positive
+    18   6   9  positive
+    19   8  10  positive
+
+Buradaki DataFrame nesnesinin X ve Y kısımlarını birbirinden ayırabiliriz:
+
+.. code-block:: python
+
+    dataset_x = df.iloc[:, 0:-1]
+    dataset_y = df.iloc[:, -1]
+
+Burada ``dataset_x`` hâlâ bir DataFrame nesnesi, ``dataset_y`` ise bir Series nesnesi durumundadır. İşlemlere
+böyle devam edebiliriz. Çünkü scikit-learn sınıfları DataFrame ve Series nesnelerini de kabul etmektedir. Ancak
+genellikle uygulamacılar temel işlemleri yaptıktan sonra NumPy'a dönmeyi tercih etmektedir:
+
+.. code-block:: python
+
+    dataset_x = df.iloc[:, 0:-1].to_numpy()
+    dataset_y = df.iloc[:, -1].to_numpy()
+
+Şimdi ``dataset_x`` ve ``dataset_y`` NumPy dizileridir. Artık ``LogisticRegression`` nesnesini şöyle
+yaratabiliriz:
+
+.. code-block:: python
+
+    lr = LogisticRegression()
+
+``fit`` işlemini yapabiliriz:
+
+.. code-block:: python
+
+    lr.fit(dataset_x, dataset_y)
+
+Model Eğitimi ve Kestirim
+-------------------------
+
+``fit`` işlemi sonucunda artık lojistik regresyon doğrusu (yani doğrunun katsayıları ve bias değeri)
+oluşturulmuştur. Sınıfın ``predict`` metodu doğrudan kestirim yapmak için kullanılmaktadır. ``predict`` metodu
+kestirimi yaparken bize sonucu ``dataset_y`` türünden etiketle vermektedir. Yani eğer ``dataset_y`` örneğimizde
+olduğu gibi *pozitif*, *negatif* gibi yazılardan oluşuyorsa metot da sonucu *pozitif*, *negatif* gibi etiket
+biçiminde verecektir. Eğer ``dataset_y`` 0 ve 1 gibi değerlerden oluşuyorsa ``predict`` metodu da sonucu bize 0
+ve 1 değerleriyle verecektir. Ancak pek çok scikit-learn sınıfında olduğu gibi predict işlemi *aynı anda pek çok
+değerin kestirimi yapılabilsin diye* iki boyutlu bir diziyi bizden istemektedir. Eğer tek bir değerin kestirimini
+yapmak istiyorsanız bu durumda o değeri iki boyutlu bir dizi haline dönüştürmeniz gerekir. Örneğin:
+
+.. code-block:: python
+
+    predict_point = np.array([10, 10])
+    predict_result = lr.predict(predict_point.reshape(1, -1))
+
+Burada tek boyutlu ``predict_point`` dizisi sanki tek satırdan oluşan iki boyutlu bir dizi haline
+dönüştürülmüştür. ``ndarray`` sınıfının ``reshape`` metoduna dikkat ediniz. İlk boyut için 1 değeri ikinci boyut
+için -1 değeri kullanılmıştır. Buradaki -1 *orijinal dizi kaç sütuna sahipse o kadar sütun olsun* anlamına
+gelmektedir. (Tabii bu özel -1 değeri yalnızca tek bir boyutta kullanılabilmektedir.) Biz burada -1 yerine
+açıkça sütun uzunluğunu da belirtebilirdik:
+
+.. code-block:: python
+
+    predict_result = lr.predict(predict_point.reshape(1, 2))
+
+Örneğimizde 4 noktayı tek hamlede kestirmek isteyelim:
+
+.. code-block:: python
+
+    predict_points = np.array([[10, 10], [8, 2], [1, 3], [4, 6]])
+
+Bu noktaların hepsini saçılma grafiği (scatter graphics) ile görüntüleyebiliriz:
+
+.. code-block:: python
+
+    plt.scatter(df[df['result'] == 'positive']['x1'], df[df['result'] == 'positive']['x2'], marker='^')
+    plt.scatter(df[df['result'] == 'negative']['x1'], df[df['result'] == 'negative']['x2'], marker='o')
+    plt.scatter(predict_points[:, 0], predict_points[:, 1], color='red', marker='v')
+    plt.show()
+
+Burada *pozitif*, *negatif* ve kestirilecek noktalar farklı belirteçlerle gösterilmiştir. Kestirimi şöyle
+yapabiliriz:
+
+.. code-block:: python
+
+    predict_results = lr.predict(predict_points)
+    print(predict_results)
+
+Şöyle bir çıktı elde edilecektir:
+
+.. code-block:: text
+
+    ['positive' 'negative' 'negative' 'negative']
+
+predict_proba ile Olasılık Kestirimi
+------------------------------------
+
+``LogisticRegression`` sınıfının ``predict_proba`` metodu noktaların 0 ve 1 olasılıklarını iki boyutlu bir dizi
+biçiminde vermektedir. Bu metodun geri döndürdüğü dizinin her satırı bir noktanın 0 olma ve 1 olma olasılıklarını
+belirtmektedir. Örneğin:
+
+.. code-block:: python
+
+    probas = lr.predict_proba(predict_points)
+    print(probas)
+
+Buradan şöyle bir çıktı elde edilmiştir:
+
+.. code-block:: text
+
+    [[6.46558599e-04 9.99353441e-01]
+    [6.40777526e-01 3.59222474e-01]
+    [9.99258816e-01 7.41183742e-04]
+    [8.66640871e-01 1.33359129e-01]]
+
+Her satırın iki elemanı toplandığında sonucun 1 olması gerektiğine dikkat ediniz.
+
+``predict_proba`` metodu aslında noktaları doğru denklemine sokup elde edilen değeri de sigmoid fonksiyonuna
+sokmaktadır. ``predict`` metodu ise elde edilen bu değerleri 0.5 ile karşılaştırıp etiket tahminini yapmaktadır.
+
+Model Katsayıları: coef\_ ve intercept\_
+----------------------------------------
+
+Peki lojistik regresyon işleminden elde ettiğimiz doğru denkleminin katsayıları nerededir? İşte fit işleminden
+sonra ``LogisticRegression`` nesnesinin ``coef_`` özniteliği X değerlerinin katsayısını (yani W değerlerini),
+``intercept_`` özniteliği ise eksen kesim noktası olan b değerini vermektedir. ``coef_`` özniteliği iki boyutlu
+bir dizi biçiminde, ``intercept_`` özniteliği ise tek boyutlu bir dizi biçiminde verilmektedir. Şimdi bu
+değerleri yazdıralım:
+
+.. code-block:: python
+
+    print(lr.coef_)
+    print(lr.intercept_)
+
+Şöyle bir çıktı elde edilmiştir:
+
+.. code-block:: text
+
+    [[1.05076175 0.72755211]]
+    [-10.43993862]
+
+Lojistik Regresyon Doğrusunun Çizilmesi
+---------------------------------------
+
+Artık lojistik regresyon grafiğini de çizebiliriz:
+
+.. code-block:: python
+
+    b = lr.intercept_
+    w1 = lr.coef_[0][0]
+    w2 = lr.coef_[0, 1]
+
+    x1 = np.linspace(0, 10, 1000)
+    x2 = (-b - w1 * x1) / w2
+
+    plt.scatter(df[df['result'] == 'positive']['x1'], df[df['result'] == 'positive']['x2'], marker='^')
+    plt.scatter(df[df['result'] == 'negative']['x1'], df[df['result'] == 'negative']['x2'], marker='o')
+    plt.scatter(predict_points[:, 0], predict_points[:, 1], color='red', marker='v')
+    plt.plot(x1, x2)
+    plt.show()
+
+Biz burada x1 ve x2 biçiminde iki özellik olduğu için lojistik regresyon doğrusunu çizebildik. Ancak gerçek
+hayat uygulamalarında özellik sayısı çok daha fazladır. Bu tür durumlarda bilgi kaybı ile sütunların sayısı
+azaltılabilmektedir. Bu konuya *boyutsal özellik indirgemesi (dimensionality feature scaling)* denilmektedir.
+Örneğin biz 10 sütuna sahip veri kümesini temsil eden iki sütuna sahip bir veri kümesi elde edebiliriz. Bu
+sayede lojistik regresyon grafiğini çizebiliriz. Şüphesiz 10 sütuna sahip bir veri kümesini 2 sütuna indirgerken
+bir bilgi kaybı söz konusu olacaktır.
+
+Yukarıdaki örneğin kodu aşağıda bir bütün olarak verilmiştir.
+
+Özellik Ölçeklemesi (Feature Scaling) ve Lojistik Regresyon
+-----------------------------------------------------------
+
+Makine öğrenmesinde kullanılan yöntemlerin önemli bir bölümünde veri kümesindeki sütunların skalalarının
+birbirine yakın olması gerekmektedir. Çünkü skala farklılıkları çözümde kullanılan yöntemlerin etkinliğini
+düşürebilmektedir. Bu durum sezgisel olarak anlaşılabilir. Aşağıdaki veri kümesine dikkat ediniz:
+
+.. code-block:: text
+
+    x1          x2      result
+    ---------------------------
+    35200       2       pozitif
+    65300       7       negatif
+    47300       1       pozitif
+    ...
+
+Bu veri kümesindeki x1 ve x2 özelliklerinin skalaları farklıdır. İşte bazı yöntemler bu skala farklılıklarından
+olumsuz etkilenmektedir. Lojistik regresyondaki bulunması istenen doğru denklemine dikkat ediniz:
+
+::
+
+    w1x1 + w2x2 + b
+
+Bu doğru denkleminde x1'in etkisi x2'den çok daha fazladır. Halbuki burada uygulamacı için x1 ve x2 sütunlarının
+aralarında bir ağırlık farkı yoktur. İşte lojistik regresyon probleminin çözümünde kullanılan *gradient descent*
+denilen nümerik analiz yönteminde skala farklılıkları olumsuzluklar doğurabilmektedir. Skala farklılıkları
+*gradient descent* yönteminde geç yakınsamaya neden olabilmekte ve öğrenmeyi olumsuz etkileyebilmektedir.
+Sütunların hepsinin benzer skalalara getirilmesi işlemine veri biliminde *özellik ölçeklemesi (feature scaling)*
+denilmektedir. En tipik kullanılan iki özellik ölçeklemesi *min-max ölçeklemesi (min-max scaling)* ve *standart
+ölçekleme (standard scaling)* denilen yöntemlerdir. Çoğu durumda standart ölçekleme tercih edilmektedir. Özellik
+ölçeklemesi için Derneğimizdeki *Yapay Zeka, Makine Öğrenmesi ve Veri Bilimi* kurs notlarına başvurabilirsiniz.
+Standart ölçekleme aşağıdaki formülle yapılmaktadır:
+
+::
+
+           xᵢ − μ
+    zᵢ = ──────────
+             σ
+
+Burada μ sütunun ortalamasını, σ ise standart sapmasını belirtmektedir. Aslında yukarıdaki işlem sütun
+elemanlarını *ortalaması 0, standart sapması 1 olan* normal dağılıma dönüştürmektedir. Bizim yukarıda yaptığımız
+örnekte x1 ve x2 sütunları arasında önemli bir skala farklılığı yoktu. Bu nedenle yukarıdaki örnekte özellik
+ölçeklemesi yapılmaması bir soruna yol açmamıştır. scikit-learn kütüphanesinde ``sklearn.preprocessing`` modülü
+içerisindeki ``StandardScaler`` isimli sınıf her sütunu tek hamlede standart ölçeklemeye sokabilmektedir.
+Sınıfın kullanılması diğer scikit-learn sınıflarında olduğu gibidir. Örneğin:
+
+.. code-block:: python
+
+    ss = StandardScaler()
+    ss.fit(dataset_x)
+    transformed_dataset_x = ss.transform(dataset_x)
+
+    lr = LogisticRegression()
+    lr.fit(transformed_dataset_x, dataset_y)
+
+Özellik ölçeklemesi kullanılıyorsa kestirilecek noktaların da aynı biçimde önce özellik ölçeklemesine sokulması
+gerekir. Örneğin:
+
+.. code-block:: python
+
+    transformed_predict_points = ss.transform(predict_points)
+    predict_results = lr.predict(transformed_predict_points)
+
+Tabii artık elde edilen W ve b değerleri ölçeklenmiş durumdaki değerlerdir. Lojistik regresyon doğrusunu
+çizerken bu durumu dikkate almamız ve ters dönüşüm uygulamamız gerekir. ``StandardScaler`` sınıfının
+``inverse_transform`` metodu bu ters dönüşümü yapmaktadır. Ancak ``inverse_transform`` metodu x1 ve x2
+değerlerinden oluşan matrisi bizden ister. İşte bunun için önce çizimde kullanılacak x1 değerlerini transform
+edip, buradan x2 değerlerini elde edip bunları birleştirmek ve birleştirilmiş halini ``inverse_transform``
+metoduna vermek gerekir:
+
+.. code-block:: python
+
+    b = lr.intercept_
+    w1 = lr.coef_[0][0]
+    w2 = lr.coef_[0, 1]
+
+    x1 = np.linspace(0, 10, 1000)
+    transformed_x1 = (x1 - ss.mean_[0]) / ss.scale_[0]
+    transformed_x2 = (-b - w1 * transformed_x1) / w2
+
+    line_points = np.column_stack((transformed_x1, transformed_x2))
+    inversed_line_points = ss.inverse_transform(line_points)
+
+Örneğin tüm kodlarını aşağıda veriyoruz.
+
+.. code-block:: python
+
+    import numpy as np
+    import pandas as pd
+    import matplotlib.pyplot as plt
+
+    df = pd.read_csv('lr.csv')
+
+    predict_points = np.array([[10, 10], [8, 2], [1, 3], [4, 6]])
+
+    plt.scatter(df[df['result'] == 'positive']['x1'], df[df['result'] == 'positive']['x2'], marker='^')
+    plt.scatter(df[df['result'] == 'negative']['x1'], df[df['result'] == 'negative']['x2'], marker='o')
+    plt.scatter(predict_points[:, 0], predict_points[:, 1], color='red', marker='v')
+    plt.show()
+
+    from sklearn.linear_model import LogisticRegression
+
+    dataset_x = df.iloc[:, 0:-1].to_numpy()
+    dataset_y = df.iloc[:, -1].to_numpy()
+
+    from sklearn.preprocessing import StandardScaler
+
+    ss = StandardScaler()
+    ss.fit(dataset_x)
+    transformed_dataset_x = ss.transform(dataset_x)
+
+    lr = LogisticRegression()
+    lr.fit(transformed_dataset_x, dataset_y)
+
+    transformed_predict_points = ss.transform(predict_points)
+    predict_results = lr.predict(transformed_predict_points)
+    print(predict_results)
+    probas = lr.predict_proba(predict_points)
+    print(probas)
+
+    print(lr.coef_)
+    print(lr.intercept_)
+
+    b = lr.intercept_
+    w1 = lr.coef_[0][0]
+    w2 = lr.coef_[0, 1]
+
+    x1 = np.linspace(0, 10, 1000)
+    transformed_x1 = (x1 - ss.mean_[0]) / ss.scale_[0]
+    transformed_x2 = (-b - w1 * transformed_x1) / w2
+
+    line_points = np.column_stack((transformed_x1, transformed_x2))
+    inversed_line_points = ss.inverse_transform(line_points)
+    plt.scatter(df[df['result'] == 'positive']['x1'], df[df['result'] == 'positive']['x2'], marker='^')
+    plt.scatter(df[df['result'] == 'negative']['x1'], df[df['result'] == 'negative']['x2'], marker='o')
+    plt.scatter(predict_points[:, 0], predict_points[:, 1], color='red', marker='v')
+    plt.plot(inversed_line_points[:, 0], inversed_line_points[:, 1])
+    plt.show()
+
