@@ -41,3 +41,4 @@ documentation for details.
    tokenization
    tokennormalization
    digitalconversionofthedictionarytreasury
+   classicnaturallanguageprocessing

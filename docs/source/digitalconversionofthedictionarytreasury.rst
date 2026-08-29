@@ -606,3 +606,209 @@ Buradan şöyle bir çıktı elde edilecektir:
     [[0 0 0 1 1 0 0 0 0 1 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
     [0 0 0 0 0 0 0 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1]]
 
+TF-IDF Yöntemi, Klasik Doğal Dil İşleme ve Olasılığa Giriş
+==========================================================
+
+TF-IDF Yöntemi
+--------------
+
+Yazıları vektörel hale dönüştürmek için *sözcük çantası (bag of words)* yönteminin dışında
+*TF-IDF (Term Frequency - Inverse Document Frequency)* denilen bir yöntem de klasik doğal dil işlemede
+oldukça sık kullanılmaktadır. Bu yöntemde tüm atomlara (tipik olarak sözcük haznesindeki tüm sözcüklere)
+birer TF-IDF değeri karşılık getirilir. Böylece yazılar birer TF-IDF vektörüne dönüştürülür. TF-IDF
+yönteminde her sözcük için önce TF ve IDF değerleri hesaplanmaktadır. Bu iki değer çarpılarak TF-IDF değeri
+elde edilir:
+
+.. code-block:: text
+
+    TF-IDF = TF * IDF
+
+Bir sözcüğün TF değeri şöyle hesaplanmaktadır:
+
+.. code-block:: text
+
+    TF = sözcüğün_metindeki_sayısı / metindeki_sözcük_sayısı
+
+Örneğin yazı şöyle olsun:
+
+*Bu film çok güzel. Film aynı zamanda çok güzel yerlerde çekilmiş.*
+
+Yazıda toplam 11 sözcük var. Bu durumda *film*, *çok*, *güzel* sözcüklerinin TF değerleri 2/11 diğer
+sözcüklerin TF değerleri ise 1/11 olur.
+
+Sözcüklerin IDF değerleri ise şöyle hesaplanmaktadır:
+
+.. code-block:: text
+
+    IDF = log(toplam_metinlerin_sayısı / sözcük_geçen_dokümanların_sayısı)
+
+Buradaki N değeri ilgili sözcüğün geçtiği farklı metinlerin sayısını belirtmektedir. Örneğin *muhteşem*
+sözcüğü 5 farklı metinde geçiyor olsun. Toplamda da 100 tane metin olsun. Bu durumda *muhteşem* sözcüğünün
+IDF değeri log(5 / 100) olacaktır. IDF değeri scikit-learn gibi bazı kütüphanelerde şöyle de
+hesaplanmaktadır:
+
+.. code-block:: text
+
+    IDF = log((1 + toplam_metin_sayısı) / (1 + sözcük_geçen_dokümanların_sayısı)) + 1
+
+Yukarıda da belirttiğimiz gibi sözcüğün TF-IDF değeri TF değeri ile IDF değerinin çarpımından elde
+edilmektedir.
+
+TF-IDF yönteminde yine tüm atomlar için (sözcük haznesindeki tüm sözcükler için) bir TF-IDF değeri elde
+edilir. Böylece tüm metinler sözcük haznesi uzunluğu kadar sütuna, yorum sayısı kadar satıra sahip olan bir
+matrisle temsil edilir. Tabii bu matris de yine seyrek (sparse) biçimde olur. Çünkü bir yorumda sözcük
+haznesindeki çok az sözcük kullanılmış olacaktır.
+
+TF-IDF değerleri ne anlama gelmektedir? Bu değerler aslında bir sözcük belli bir metinde çok geçtiğinde ama
+diğer metinlerde az geçtiğinde yüksek bir skor üretmektedir. Çünkü bu durumda ilgili sözcüğün metindeki
+önemi artmaktadır.
+
+.. list-table:: TF, IDF ve TF-IDF Değerlerinin Yorumu
+   :header-rows: 1
+   :widths: 15 15 15 55
+
+   * - TF
+     - IDF
+     - TF-IDF
+     - Yorum
+   * - Yüksek
+     - Yüksek
+     - Yüksek
+     - Belgede sık, derlemde seyrek: karakteristik konu sözcüğü. İdeal durum.
+   * - Yüksek
+     - Düşük
+     - Düşük
+     - Belgede sık ama her belgede var: işlev sözcüğü ('bu', 'bir'). IDF bastırır.
+   * - Düşük
+     - Yüksek
+     - Düşük
+     - Derlemde seyrek ama bu belgeyle bağı zayıf: seyreklik tek başına yetmez.
+   * - Düşük
+     - Düşük
+     - Sıfıra yakın
+     - Hem seyrek hem yaygın: hiçbir ayırt edicilik taşımaz.
+
+Aşağıdaki tabloda sözcük çantası yöntemiyle TF-IDF yönteminin genel niteliklerini karşılaştırıyoruz:
+
+.. list-table:: Sözcük Çantası (BoW) ile TF-IDF Karşılaştırması
+   :header-rows: 1
+   :widths: 25 35 40
+
+   * - Özellik
+     - Sözcük Çantası (BoW)
+     - TF-IDF
+   * - Hücre değeri
+     - Ham sıklık sayımı (tamsayı)
+     - TF × IDF ağırlığı (gerçel sayı)
+   * - Bilgi kaynağı
+     - Yalnızca yerel (tek belge)
+     - Yerel + küresel (tüm derlem)
+   * - İşlev sözcükleri
+     - Yüksek değer alır, baskındır
+     - IDF ile kendiliğinden bastırılır
+   * - Ayırt edicilik
+     - Yok; tüm sözcükler eşit önemde
+     - Var; seyrek sözcükler öne çıkar
+   * - Derleme bağımlılık
+     - Düşük; belge tek başına yeter
+     - Yüksek; IDF derlemden hesaplanır
+   * - Yeni belge eklendiğinde
+     - Vektörler değişmez
+     - IDF, dolayısıyla ağırlıklar değişebilir
+   * - Hesaplama maliyeti
+     - Çok düşük
+     - Düşük (ek IDF geçişi gerekir)
+   * - Yorumlanabilirlik
+     - Doğrudan (kaç kez geçmiş)
+     - Dolaylı (göreli önem skoru)
+   * - scikit-learn sınıfı
+     - ``CountVectorizer``
+     - ``TfidfVectorizer``
+
+Hangi tür uygulamalarda sözcük çantası, hangi tür uygulamalarda TF-IDF yönteminin daha uygun olduğuna
+ilişkin olduğuna yönelik bir tabloyu aşağıda veriyoruz:
+
+.. list-table:: Sözcük Çantası mı TF-IDF mi Kullanılmalı?
+   :header-rows: 1
+   :widths: 40 20 40
+
+   * - Durum
+     - Tercih Edilen
+     - Gerekçe
+   * - Belge benzerliği / arama (retrieval)
+     - TF-IDF
+     - Karakteristik sözcükler benzerliği belirler
+   * - Konu temelli metin sınıflandırma
+     - TF-IDF
+     - Konu sözcükleri öne çıkar, gürültü bastırılır
+   * - Naive Bayes (MultinomialNB) ile eğitim
+     - BoW
+     - Model tamsayı sayım varsayımına dayanır
+   * - LDA gibi olasılıksal konu modelleri
+     - BoW
+     - Üretici model sayım bekler
+   * - Çok küçük derlem (birkaç belge)
+     - BoW
+     - IDF kestirimleri güvenilmez olur
+   * - Sözcük sıklığının kendisi analiz konusuysa
+     - BoW
+     - Ham sayım doğrudan yorumlanır
+   * - Kısa metinler (tweet, başlık)
+     - TF-IDF
+     - TF zaten 0/1'e yakın; IDF ayırt ediciliği sağlar
+   * - Stop-word listesi kullanılamıyorsa
+     - TF-IDF
+     - İşlev sözcükleri matematiksel olarak bastırılır
+
+scikit-learn TfidfVectorizer ile TF-IDF Hesaplama
+-------------------------------------------------
+
+Yazıların TF-IDF yöntemi ile vektörize edilmesi scikit-learn içerisinde ``TfidfVectorizer`` sınıfı
+kullanılarak yapılabilmektedir. Sınıfın kullanımı diğer scikit-learn sınıflarında olduğu gibidir.
+``TfidfVectorizer`` sınıfının ``__init__`` metodunun parametrik yapısı şöyledir:
+
+.. code-block:: python
+
+    class sklearn.feature_extraction.text.TfidfVectorizer(*, input='content', encoding='utf-8',
+            decode_error='strict', strip_accents=None, lowercase=True, preprocessor=None, tokenizer=None,
+            analyzer='word', stop_words=None, token_pattern='(?u)\\b\\w\\w+\\b', ngram_range=(1, 1),
+            max_df=1.0, min_df=1, max_features=None, vocabulary=None, binary=False,
+            dtype=numpy.int64, norm='l2', use_idf=True, smooth_idf=True, sublinear_tf=False)
+
+Örnek bir kullanımı şöyle olabilir:
+
+.. code-block:: python
+
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    corpus = [
+        "Bu bir örnek belgedir",
+        "Bu başka bir belgedir",
+        "Bu belge TF-IDF kullanılarak vektörize edilecek"
+    ]
+
+    vectorizer = TfidfVectorizer()
+    vectorizer.fit(corpus)
+
+``fit`` işleminden sonra sözcük hazinesi ve IDF değerleri oluşturulmuş olur. IDF değerleri nesnenin ``idf_``
+özniteliğinden elde edilebilir. ``fit`` işlemi de bu bilgiye dayanılarak yapılmaktadır. Örneğin:
+
+.. code-block:: python
+
+    corpus = [
+        "Bu bir örnek belgedir",
+        "Bu başka bir belgedir",
+        "Bu belge TF-IDF kullanılarak vektörize edilecek"
+    ]
+
+    text = ['bu belge vektörize edilecek',
+            'bu belge bir örnektir']
+
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    vectorizer = TfidfVectorizer()
+    vectorizer.fit(corpus)
+    result = vectorizer.transform(text).todense()
+    print(result)
+
+Sözcük hazinesi yine nesnenin ``vocabulary_`` özniteliğinden elde edilebilir.
