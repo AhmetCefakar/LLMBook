@@ -63,7 +63,7 @@ Atom normalizasyonunda temelde iki işlem yapılmaktadır:
 2) Gövdeleme (stemming)
 3) Sözlüksel biçime dönüştürme (lemmatization)
 
-Yazıdaki tek başına önemli bir anlama sahip olmayan sık geçen sözcüklere "**durak sözcükleri (stop words)**" 
+Yazıdaki tek başına önemli bir anlama sahip olmayan sık geçen sözcüklere "*durak sözcükleri (stop words)*" 
 denilmektedir. Klasik doğal dil işleme uygulamalarında bu tür sözcüklerin atılması fayda sağlayabilmektedir. Mesela 
 İngilizce`deki *the*, *a*, *an*, *is*, *in*, *of*, *and*, *to*, Türkçe'deki *ve*, *ile*, *ama*, *için*, *gibi*, *bu*, 
 *şu*, *da*, *de* tipik durak sözcükleridir. Şüphesiz durak sözcüklerinin de aslında metin içerisinde işlevleri vardır. 
@@ -143,6 +143,27 @@ Durak sözcükleri atıldıktan sonra şu atomlar kalmıştır:
 
     {'bugün', 'ali', 'güzel', 'dolaştık', 'veli', 'hava'}
 
+
+Türkçe için durak sözcükleri *Zemberek* geliştiricisi tarafından da oluşturulmuştur. Bunları aşağıdaki bağlantıdan
+indirebilirsiniz:
+
+``https://raw.githubusercontent.com/ahmetaa/zemberek-nlp/master/experiment/src/main/resources/stop-words.tr.txt``
+
+
+İndirmek için aşağıdaki kodu da kullabilirsiniz. Biz buradaki kümeyi ``DataFrame`` haline getirip ``turkish-stopwords.csv``
+dosyası halinde save ettik:
+
+.. code-block:: python
+    
+    import urllib.request
+
+    url = 'https://raw.githubusercontent.com/ahmetaa/zemberek-nlp/master/experiment/src/main/resources/stop-words.tr.txt'
+    with urllib.request.urlopen(url) as f:
+        stop_words = set(f.read().decode('utf-8').splitlines())
+    df = pd.DataFrame(stop_words)
+    df.to_csv('turkish-stopwords.csv', index=False)
+
+
 Gövdeleme genel olarak *kural tabanlı (rule based)* yöntemlerle uygulanmaktadır. Gövdeleme için çeşitli algoritmalar
 önerilmiştir. Ancak bu algoritmaların çoğu İngilizce temel alınarak oluşturulmuştur dolayısıyla Türkçeye uygun
 değildir.
@@ -150,7 +171,7 @@ değildir.
 *Porter Stemmer* algoritması en yaygın kullanılan gövdeleme algoritmasıdır. 1980 yılında Martin Porter tarafından
 geliştirilmiştir. Algoritma İngilizce için oluşturulmuştur. Aşağıdaki kurallar sırasıyla uygulanmaktadır:
 
-**1a) Çoğul ekleri kaldırılır.** Örneğin:
+*1a) Çoğul ekleri kaldırılır.* Örneğin:
 
 .. code-block:: text
 
@@ -158,7 +179,7 @@ geliştirilmiştir. Algoritma İngilizce için oluşturulmuştur. Aşağıdaki k
     ponies → poni
     cats → cat
 
-**1b) -ed, -ing ekleri kaldırılır:**
+*1b) -ed, -ing ekleri kaldırılır:*
 
 .. code-block:: text
 
@@ -166,13 +187,13 @@ geliştirilmiştir. Algoritma İngilizce için oluşturulmuştur. Aşağıdaki k
     plastered → plaster
     motoring → motor
 
-**1c) Sondaki 'y' harfi 'i' ye dönüştürülür (kökte sesli varsa).** Örneğin:
+*1c) Sondaki 'y' harfi 'i' ye dönüştürülür (kökte sesli varsa).* Örneğin:
 
 .. code-block:: text
 
     happy → happi
 
-**2) Türetme ekleri sadeleştirilir.** Örneğin:
+*2) Türetme ekleri sadeleştirilir.* Örneğin:
 
 .. code-block:: text
 
@@ -181,7 +202,7 @@ geliştirilmiştir. Algoritma İngilizce için oluşturulmuştur. Aşağıdaki k
     FULNESS → FUL      hopefulness   → hopeful
     BILITI  → BLE      sensibiliti   → sensible
 
-**3) Kalan türetme ekleri kaldırılır.** Örneğin:
+*3) Kalan türetme ekleri kaldırılır.* Örneğin:
 
 .. code-block:: text
 
@@ -190,7 +211,7 @@ geliştirilmiştir. Algoritma İngilizce için oluşturulmuştur. Aşağıdaki k
     NESS  →        goodness     → good
     ATIVE →        formative    → form
 
-**4) Son ekler tamamen atılır.** Örneğin:
+*4) Son ekler tamamen atılır.* Örneğin:
 
 .. code-block:: text
 
@@ -199,14 +220,14 @@ geliştirilmiştir. Algoritma İngilizce için oluşturulmuştur. Aşağıdaki k
     MENT  →     adjustment  → adjust
     ION   →     adoption    → adopt   (kök S veya T ile bitiyorsa)
 
-**5a) Sondaki 'e' harfi atılır.** Örneğin:
+*5a) Sondaki 'e' harfi atılır.* Örneğin:
 
 .. code-block:: text
 
     probate → probat
     cease → ceas
 
-**5b) Çift 'l' teke indirilir.** Örneğin:
+*5b) Çift 'l' teke indirilir.* Örneğin:
 
 .. code-block:: text
 

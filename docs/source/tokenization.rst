@@ -8042,7 +8042,7 @@ Atomlardan yeniden metni elde etmek için tokenizer nesnesi ile convert_tokens_t
 
 AutoTokenizer sınıfının dokümantasyonuna aşağıdaki bağlantıdan ulaşabilirsiniz:
 
-https://huggingface.co/docs/transformers/v5.12.0/en/model_doc/auto#transformers.AutoTokenizer
+``https://huggingface.co/docs/transformers/v5.12.0/en/model_doc/auto#transformers.AutoTokenizer``
 
 .. code-block:: python
 
@@ -8136,7 +8136,7 @@ WordPiece Yöntemi
 WordPiece yöntemi M. Schuster ve K. Nakajima tarafından ortaya atılmıştır. Yöntem *Japanese and Korean Voice Search*
 başlıklı makalede tanıtılmıştır. Orijinal makaleye aşağıdaki bağlantıdan erişebilirsiniz:
 
-https://research.google.com/pubs/archive/37842.pdf
+``https://research.google.com/pubs/archive/37842.pdf``
 
 WordPiece yöntemi BERT, DistilBERT ve Electra gibi büyük dil modellerinde kullanılmaktadır.
 
@@ -9638,7 +9638,7 @@ zaten Unigram LM yöntemi *Taku Kudo* tarafından ortaya atılmıştı. Kütüph
 
 Kütüphanenin orijinal kodlarına aşağıdaki bağlantıdan erişebilirsiniz:
 
-https://github.com/google/sentencepiece
+``https://github.com/google/sentencepiece``
 
 Kütüphane temelde Unigram LM yöntemi ile atomlarına ayırma işlemini yapmaktadır. Ancak klasik BPE de kütüphane
 tarafından desteklenmektedir. Kütüphaneye sonraları sözcük tabanlı ve karakter tabanlı atomlarına ayırma özelliği de
